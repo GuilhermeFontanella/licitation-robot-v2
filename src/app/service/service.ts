@@ -1,4 +1,5 @@
-//import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
+import { headers } from "next/headers";
 
 export class Service {
     async getFilterOptions() {
@@ -79,24 +80,39 @@ export class Service {
   }
 }
 
-    // async getReports(json, prompt, apiKey) {
-    //     const ai = new GoogleGenAI({ apiKey: apiKey });
-    //     const contents = [{
-    //         role: 'user',
-    //         parts: [
-    //             {
-    //                 text: prompt
-    //             },
-    //             {
-    //                 text: json
-    //             }
-    //         ]
-    //     }
-    //     ]
-    //     const response = await ai.models.generateContent({
-    //         model: 'gemini-2.5-flash',
-    //         contents: contents
-    //     });
-    //     return response;
-    // }
+    async getReports(json: string, prompt: string, apiKey: string) {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const contents = [{
+            role: 'user',
+            parts: [
+                {
+                    text: prompt
+                },
+                {
+                    text: json
+                }
+            ]
+        }
+        ]
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: contents
+        });
+        return response;
+    }
+
+    async storeReports(data: any) {
+        const response = await fetch(
+            `https://68dbf10f445fdb39dc2727ee.mockapi.io/api/v1/ai-reports/generated-reports`,
+            {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            }
+        );
+        return response.json();
+    }
 }
+

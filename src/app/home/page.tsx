@@ -24,49 +24,7 @@ import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Service } from "../service/service";
 import { formatDate } from "@/utils/formatDate";
-
-const data: any[] = [
-  {
-    nProcesso: '011/2024',
-    orgao: 'Prefeitura Municipal da Estância de Atibaia',
-    descricao: 'Aquisição de placas de sinalização de segurança do trabalho e de prevenção contra incêndios, como as previstas na NR 23 (Proteção Contra Incêndios) e na NR 26 (Sinalização de Segurança) para o Município de Capinzal e Seus Entes.',
-    dataPublicacao: '29/08/2025 às 09:31',
-    aberturaPropostas: '28/08/2026 às 16:00',
-    tipo: 'Pregão para Registro de Preços - Menor Preço',
-    url: '',
-    statusIa: 'com potencial'
-  },
-  {
-    nProcesso: '011/2024',
-    orgao: 'Prefeitura Municipal da Estância de Atibaia',
-    descricao: 'Aquisição de placas de sinalização de segurança do trabalho e de prevenção contra incêndios, como as previstas na NR 23 (Proteção Contra Incêndios) e na NR 26 (Sinalização de Segurança) para o Município de Capinzal e Seus Entes.',
-    dataPublicacao: '29/08/2025 às 09:31',
-    aberturaPropostas: '28/08/2026 às 16:00',
-    tipo: 'Pregão para Registro de Preços - Menor Preço',
-    url: '',
-    statusIa: 'sem potencial'
-  },
-  {
-    nProcesso: '011/2024',
-    orgao: 'Prefeitura Municipal da Estância de Atibaia',
-    descricao: 'Aquisição de placas de sinalização de segurança do trabalho e de prevenção contra incêndios, como as previstas na NR 23 (Proteção Contra Incêndios) e na NR 26 (Sinalização de Segurança) para o Município de Capinzal e Seus Entes.',
-    dataPublicacao: '29/08/2025 às 09:31',
-    aberturaPropostas: '28/08/2026 às 16:00',
-    tipo: 'Pregão para Registro de Preços - Menor Preço',
-    url: '',
-    statusIa: null
-  },
-  {
-    nProcesso: '011/2024',
-    orgao: 'Prefeitura Municipal da Estância de Atibaia',
-    descricao: 'Aquisição de placas de sinalização de segurança do trabalho e de prevenção contra incêndios, como as previstas na NR 23 (Proteção Contra Incêndios) e na NR 26 (Sinalização de Segurança) para o Município de Capinzal e Seus Entes.',
-    dataPublicacao: '29/08/2025 às 09:31',
-    aberturaPropostas: '28/08/2026 às 16:00',
-    tipo: 'Pregão para Registro de Preços - Menor Preço',
-    url: '',
-    statusIa: null
-  },
-]
+import { PROMPT2 } from "@/utils/constants/prompt";
 
 
 export default function Ecommerce() {
@@ -88,12 +46,10 @@ export default function Ecommerce() {
   const [judgementOptions, setJudgementOptions] = useState<any[]>([]);
   const [debouncedInputValue, setDebouncedInputValue] = useState("");
   const [data, setData] = useState<any[]>([]);
-
-  const options = [
-    { value: "marketing", label: "Marketing" },
-    { value: "template", label: "Template" },
-    { value: "development", label: "Development" },
-  ];
+  const [apiKey, setApiKey] = useState<string>('');
+  const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
+  const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
+  const [reportGeneratedSuccessfully, setReportGeneratedSuccessfully] = useState<{id: string, success: boolean}>({id: '', success: false});
 
   const isFilterValueSelected = (): boolean => {
     if (term || status || modality || realization || judgement || uf) {
@@ -268,19 +224,39 @@ export default function Ecommerce() {
     showOptions();
   }
 
+  const generatePreReport = async () => {
+    setIsLoadingReport(true);
+    const jsonData = JSON.stringify(itemSelectedForPreliminarReport);
+    console.log(jsonData);
+    try {
+      const response = await service.getReports(jsonData, PROMPT2, apiKey);
+      const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      console.log(content);
+
+      const payload = {
+        content: JSON.stringify(content)
+      }
+      const responseStoreReport = await service.storeReports(payload);
+      
+      setReportGeneratedSuccessfully({id: responseStoreReport.id, success: true});
+      setIsLoadingReport(false);
+      setItemSelectedForPreliminarReport(null);
+      return responseStoreReport;
+    } catch (err: any) {
+      throw new Error(err)
+    } finally {
+    }
+  }
+
+  const oepnLink = () => {
+    window.open('https://aistudio.google.com/apikey', '_blank');
+    window.open('https://developers.google.com/workspace/guides/create-project?hl=pt-br', '_blank');
+  }
+
   return (
     <>
     <div>
       <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {results.length > 0 && (
-          <div style={{position: 'fixed', right: 24}}>
-            <div className="flex items-center gap-5">
-                <Button size="sm" onClick={openModal}>
-                  Ações com IA
-                </Button>
-            </div>
-          </div>
-        )}
         <div className="col-span-12 space-y-6 xl:col-span-12">
           <ComponentCard title="Pesquisa de licitações">
             <div className="flex items-center gap-5">
@@ -424,7 +400,7 @@ export default function Ecommerce() {
                 key={index} 
                 headerButton={(
                   <div className="flex items-center gap-5">
-                    <Button size="sm" variant="outline" startIcon={<PlugInIcon />}>
+                    <Button size="sm" variant="outline" startIcon={<PlugInIcon />} onClick={() => {openModal(); setItemSelectedForPreliminarReport(element)}}>
                       Gerar análise preliminar
                     </Button>
                   </div>
@@ -532,43 +508,36 @@ export default function Ecommerce() {
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Edit Address
+              Gerar relatório preliminar com IA
             </h4>
             <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              Update your details to keep your profile up-to-date.
+              O relatório preliminar irá analisar os itens do edital selecionado, conforme o prompt previamente definido. O relatório identificará se o edital contém itens que obedecem as regras estabelecidas, fornecendo informações mais precisas sobre possíveis oportunidades de negócio.
             </p>
           </div>
           <form className="flex flex-col">
             <div className="px-2 overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-1">
                 <div>
-                  <Label>Country</Label>
-                  <Input type="text" defaultValue="United States" />
-                </div>
-
-                <div>
-                  <Label>City/State</Label>
-                  <Input type="text" defaultValue="Arizona, United States." />
-                </div>
-
-                <div>
-                  <Label>Postal Code</Label>
-                  <Input type="text" defaultValue="ERT 2489" />
-                </div>
-
-                <div>
-                  <Label>TAX ID</Label>
-                  <Input type="text" defaultValue="AS4568384" />
+                  <Label>API Key</Label>
+                  <Input disabled={isLoadingReport} type="text" placeholder="Insira a sua Api Key para gerar o relatório preliminar" onChange={(value) => setApiKey(value.target.value)} />
+                  <a className="text-gray-400 hover:text-warning-25" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-              <Button size="sm" variant="outline" onClick={closeModal}>
-                Close
+              <Button disabled={isLoadingReport} size="sm" variant="outline" onClick={closeModal}>
+                Cancelar
               </Button>
-              <Button size="sm" >
-                Save Changes
-              </Button>
+              {!reportGeneratedSuccessfully.success 
+              ? (
+                <Button disabled={isLoadingReport || !apiKey} size="sm" onClick={() => generatePreReport()}>
+                  {isLoadingReport ? 'Analisando dados...' : 'Gerar relatório'}
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => window.location.href = 'google.com'}>
+                  Visualizar relatório
+                </Button>
+              )}
             </div>
           </form>
         </div>

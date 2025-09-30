@@ -142,8 +142,8 @@ export default function BasicTableOne({items}: {items: any[]}) {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {items.map((item) => (
-                <TableRow key={item.id}>
+              {items.map((item, index) => (
+                <TableRow key={index}>
                   <TableCell className="px-5 py-4 sm:px-6 text-start">
                     <div className="flex items-center gap-3">
                       
