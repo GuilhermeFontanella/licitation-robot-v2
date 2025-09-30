@@ -25,10 +25,12 @@ import { Modal } from "@/components/ui/modal";
 import { Service } from "../service/service";
 import { formatDate } from "@/utils/formatDate";
 import { PROMPT2 } from "@/utils/constants/prompt";
+import { useRouter } from "next/navigation";
 
 
 export default function Ecommerce() {
   const service: Service = new Service();
+  const router = useRouter();
   const [isOpenFilter, setIsOpenFilter] = useState<boolean>(false);
   const { isOpen, closeModal, openModal } = useModal();
   const [results, setResults] = useState<any[]>([1]);
@@ -534,7 +536,7 @@ export default function Ecommerce() {
                   {isLoadingReport ? 'Analisando dados...' : 'Gerar relatório'}
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => window.location.href = 'google.com'}>
+                <Button size="sm" onClick={() => router.push(`/licitations/${reportGeneratedSuccessfully.id}`)}>
                   Visualizar relatório
                 </Button>
               )}
