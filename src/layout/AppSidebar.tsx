@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   {
     icon: <DocsIcon />,
     name: "Processos licitatórios",
-    path: '/'
+    path: '/home'
   },
   {
     icon: <ShootingStarIcon />,
