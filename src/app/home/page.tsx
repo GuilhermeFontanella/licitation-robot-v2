@@ -1,23 +1,13 @@
 "use client"
-import type { Metadata } from "next";
-import { EcommerceMetrics } from "@/components/ecommerce/EcommerceMetrics";
 import React, { useEffect, useState } from "react";
-import MonthlyTarget from "@/components/ecommerce/MonthlyTarget";
-import MonthlySalesChart from "@/components/ecommerce/MonthlySalesChart";
-import StatisticsChart from "@/components/ecommerce/StatisticsChart";
-import RecentOrders from "@/components/ecommerce/RecentOrders";
-import DemographicCard from "@/components/ecommerce/DemographicCard";
 import ComponentCard from "@/components/common/ComponentCard";
 import Button from "@/components/ui/button/Button";
 import Label from "@/components/form/Label";
 import Select from "@/components/form/Select";
-import { ChatIcon, ChevronDownIcon, ChevronUpIcon, CloseIcon, CloseLineIcon, DownloadIcon, FileIcon, MoreDotIcon, PlugInIcon, RobotIcon, TaskIcon } from "@/icons";
+import { ChevronDownIcon, ChevronUpIcon, CloseLineIcon, DownloadIcon, PlugInIcon } from "@/icons";
 import Input from "@/components/form/input/InputField";
 import BlankPage from "../../components/BlankPage";
 import BasicTableOne from "@/components/tables/BasicTableOne";
-import { Dropdown } from "@/components/ui/dropdown/Dropdown";
-import { DropdownItem } from "@/components/ui/dropdown/DropdownItem";
-import Link from "next/link";
 import Pagination from "@/components/tables/Pagination";
 import Badge from "@/components/ui/badge/Badge";
 import { useModal } from "@/hooks/useModal";
@@ -28,14 +18,14 @@ import { PROMPT2 } from "@/utils/constants/prompt";
 import { useRouter } from "next/navigation";
 
 
-export default function Ecommerce() {
+export default function Home() {
   const service: Service = new Service();
   const router = useRouter();
   const [isOpenFilter, setIsOpenFilter] = useState<boolean>(false);
   const { isOpen, closeModal, openModal } = useModal();
   const [results, setResults] = useState<any[]>([1]);
   const [showEditalOptions, setShowEditalOptions] = useState<boolean>(false);
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>('1');
   const [term, setTerm] = useState<string>('Aquisição');
   const [modality, setModality] = useState<string>('1');
   const [realization, setRealization] = useState<string>('1');
@@ -54,6 +44,8 @@ export default function Ecommerce() {
   const [reportGeneratedSuccessfully, setReportGeneratedSuccessfully] = useState<{id: string, success: boolean}>({id: '', success: false});
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [isSelectProccesses, setIsSelectedProccesses] = useState<boolean>(false);
+  const [elementsSelected, setElementsSelected] = useState<any[]>([]);
 
   const isFilterValueSelected = (): boolean => {
     if (term || status || modality || realization || judgement || uf) {
@@ -96,7 +88,6 @@ export default function Ecommerce() {
       if (value) url.set(key, value);
       else url.delete(key);
     });
-
 
     window.history.pushState(null, '', `?${url.toString()}`);
   };
@@ -263,6 +254,22 @@ export default function Ecommerce() {
     window.open('https://developers.google.com/workspace/guides/create-project?hl=pt-br', '_blank');
   }
 
+  const handleProcessSelected = (element: any, isSelected: boolean) => {
+    if (!isSelected) {
+      // Deselecionar: remove o elemento
+      setElementsSelected(prev =>
+        prev.filter(item => item !== element)
+      );
+    } else {
+      // Selecionar: adiciona o elemento
+      setElementsSelected(prev => [...prev, element]);
+    }
+  };
+
+  useEffect(() => {
+    console.log(elementsSelected);
+  }, [elementsSelected])
+
   return (
     <>
     <div>
@@ -385,6 +392,23 @@ export default function Ecommerce() {
             )}
           </ComponentCard>
         </div>
+        <div className="xl:col-span-12">
+            <div className="flex items-center gap-5">
+              <Button disabled={elementsSelected?.length > 0} size="sm" variant="primary" onClick={() => {setIsSelectedProccesses(true); setElementsSelected([])}}>
+                {elementsSelected?.length > 0 ? `${elementsSelected.length} selecionados` : 'Selecionar processos'}
+              </Button>
+              {isSelectProccesses && (
+                <>
+                  <Button size="sm" variant="outline" onClick={() => {setIsSelectedProccesses(false); setElementsSelected([])}}>
+                    Cancelar
+                  </Button>
+                  <Button disabled={elementsSelected?.length === 0} size="sm" variant="primary" onClick={() => {openModal(); setItemSelectedForPreliminarReport(elementsSelected)}}>
+                    Gerar análises preliminares
+                  </Button>
+                </>
+              )}
+            </div>
+        </div>
       </div>
       <div style={{ marginTop: '16px' }}>
         {data.length > 0
@@ -392,7 +416,9 @@ export default function Ecommerce() {
             <div className="space-y-6">
               {data.map((element: any, index: number) => (
                 <ComponentCard 
-                title={`Processo Nº ${element.identificacao}`} 
+                title={`Processo Nº ${element.identificacao} - ${element.codigoLicitacao}`} 
+                checkbox={isSelectProccesses}
+                onCheboxSelected={(isSelected) => handleProcessSelected(element, isSelected)}
                 desc={(
                   <Badge
                       size="sm"
@@ -406,17 +432,20 @@ export default function Ecommerce() {
                     >
                       {element.statusIa ?? 'Não analisado'}
                     </Badge>
+               
                 )}
                 key={index} 
-                headerButton={(
-                  <div className="flex items-center gap-5">
-                    <Button size="sm" variant="outline" startIcon={<PlugInIcon />} onClick={() => {openModal(); setItemSelectedForPreliminarReport(element)}}>
-                      Gerar análise preliminar
-                    </Button>
-                  </div>
+                headerButton={
+                  !elementsSelected.includes(element) && (
+                    <div className="flex items-center gap-5">
+                      <Button size="sm" variant="outline" startIcon={<PlugInIcon />} onClick={() => {openModal(); setItemSelectedForPreliminarReport(element)}}>
+                        Gerar análise preliminar
+                      </Button>
+                    </div>
+                  
                 )}>
-                  <div className="flex flex-row items-center w-full gap-6 xl:flex-row" style={{justifyContent: 'space-between'}}>
-                    <div>
+                  <div className="flex flex-row grid grid-cols-12 justify-between items-center w-full gap-6 xl:flex-row">
+                    <div className="col-span-9">
                       <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
                         {`${element.razaoSocial} - ${element.unidadeCompradora.uf}`}
                       </h4>
@@ -456,11 +485,11 @@ export default function Ecommerce() {
 
                       </div>
                     </div>
-                    <div className="col-span-12 flex gap-5">
-                      <Button size="sm" variant="outline" startIcon={<MoreDotIcon />} onClick={showOptions} >
-                        {''}
+                    <div className="col-span-3 w-full gap-5 text-end">
+                      <Button size="sm" variant="outline" startIcon={<DownloadIcon />} onClick={() => downloadEdital(element)} >
+                        Baixar edital
                       </Button>
-                      <Dropdown
+                      {/* <Dropdown
                         isOpen={showEditalOptions}
                         onClose={() => {}}
                         className="absolute right-12 mt-[49px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
@@ -496,7 +525,7 @@ export default function Ecommerce() {
                           </li>
                           
                         </ul>
-                      </Dropdown>
+                      </Dropdown> */}
                     </div>
 
                   </div>
@@ -514,14 +543,14 @@ export default function Ecommerce() {
         }
       </div>
     </div>
-    <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
+      <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
             <h4 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Gerar relatório preliminar com IA
+              Gerar análise preliminar com IA
             </h4>
             <p className="mb-6 text-sm text-gray-500 dark:text-gray-400 lg:mb-7">
-              O relatório preliminar irá analisar os itens do edital selecionado, conforme o prompt previamente definido. O relatório identificará se o edital contém itens que obedecem as regras estabelecidas, fornecendo informações mais precisas sobre possíveis oportunidades de negócio.
+              Esta análise preliminar irá verificar os editais selecionados, conforme o prompt previamente definido. O relatório identificará se os editais contém itens que obedecem as regras estabelecidas, fornecendo informações mais precisas sobre possíveis oportunidades de negócio.
             </p>
           </div>
           <form className="flex flex-col">
@@ -541,11 +570,11 @@ export default function Ecommerce() {
               {!reportGeneratedSuccessfully.success 
               ? (
                 <Button disabled={isLoadingReport || !apiKey} size="sm" onClick={() => generatePreReport()}>
-                  {isLoadingReport ? 'Analisando dados...' : 'Gerar relatório'}
+                  {isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
                 </Button>
               ) : (
                 <Button size="sm" onClick={() => router.push(`/licitations/${reportGeneratedSuccessfully.id}`)}>
-                  Visualizar relatório
+                  Visualizar análise
                 </Button>
               )}
             </div>
