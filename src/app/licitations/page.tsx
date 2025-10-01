@@ -159,9 +159,10 @@ export default function Licitations() {
 
     const generateFullReport = async () => {
         setIsLoadingReport(true);
-        const fileBase64 = service.fileToBase64(fileSelected);
         try {
-            const response = await service.getFullReport(fileBase64, PROMPT1, apiKey);
+            const fileBase64 = await service.fileToBase64(fileSelected);
+            const cleanBase64 = fileBase64.split(",")[1];
+            const response = await service.getFullReport(cleanBase64, PROMPT1, apiKey);
             const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
             if (!content) {
@@ -183,7 +184,7 @@ export default function Licitations() {
         } catch (err: any) {
           throw new Error(err)
         } finally {
-            setIsLoadingReport(true);
+            setIsLoadingReport(false);
         }
     }
     

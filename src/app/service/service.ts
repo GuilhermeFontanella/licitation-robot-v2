@@ -101,7 +101,7 @@ export class Service {
         return response;
     }
 
-    async getFullReport(file: any, prompt: string, apiKey: string) {
+    async getFullReport(file: string, prompt: string, apiKey: string) {
         const ai = new GoogleGenAI({ apiKey: apiKey });
         const contents = [{
             role: 'user',
