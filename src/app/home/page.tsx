@@ -559,7 +559,7 @@ export default function Home() {
                 <div>
                   <Label>API Key</Label>
                   <Input disabled={isLoadingReport} type="text" placeholder="Insira a sua Api Key para gerar o relatório preliminar" onChange={(value) => setApiKey(value.target.value)} />
-                  <a className="text-gray-400 hover:text-warning-25" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
+                  <a className="text-gray-400 hover:text-blue-700" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
                 </div>
               </div>
             </div>
