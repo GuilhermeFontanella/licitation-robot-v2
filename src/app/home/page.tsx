@@ -25,10 +25,12 @@ import { Modal } from "@/components/ui/modal";
 import { Service } from "../service/service";
 import { formatDate } from "@/utils/formatDate";
 import { PROMPT2 } from "@/utils/constants/prompt";
+import { useRouter } from "next/navigation";
 
 
 export default function Ecommerce() {
   const service: Service = new Service();
+  const router = useRouter();
   const [isOpenFilter, setIsOpenFilter] = useState<boolean>(false);
   const { isOpen, closeModal, openModal } = useModal();
   const [results, setResults] = useState<any[]>([1]);
@@ -50,6 +52,8 @@ export default function Ecommerce() {
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
   const [reportGeneratedSuccessfully, setReportGeneratedSuccessfully] = useState<{id: string, success: boolean}>({id: '', success: false});
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   const isFilterValueSelected = (): boolean => {
     if (term || status || modality || realization || judgement || uf) {
@@ -159,6 +163,7 @@ export default function Ecommerce() {
     if (realization) filters.codigoRealizacao = realization;
     if (judgement) filters.codigoJulgamento = judgement;
     if (uf) filters.codigoUf = uf;
+    if (page) filters.pagina = page.toString();
     filters.municipio = '0';
 
     const response = await getLicitations(filters);
@@ -178,6 +183,7 @@ export default function Ecommerce() {
   const getLicitations = async (params: any) => {
     try {
       const response = await service.getLicitations(params);
+      setTotalPages(response.pageCount);
       return response;
     } catch (err) {
       console.error(err);
@@ -214,6 +220,10 @@ export default function Ecommerce() {
     fetchLicitations();
   }, []);
 
+  useEffect(() => {
+    fetchLicitations();
+  }, [page]);
+
   const downloadEdital = (element: any) => {
     const link = document.createElement("a");
     link.href = element.url;
@@ -230,7 +240,7 @@ export default function Ecommerce() {
     console.log(jsonData);
     try {
       const response = await service.getReports(jsonData, PROMPT2, apiKey);
-      const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      const content = '';//response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
       console.log(content);
 
       const payload = {
@@ -494,7 +504,7 @@ export default function Ecommerce() {
                 </ComponentCard>
               ))}
               <div className="col-span-12 w-full" style={{justifyItems: 'center', margin: '32px 0 24px 0'}}>
-                <Pagination currentPage={1} totalPages={10} onPageChange={() => {}} />
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
               </div>
             </div>
           )
@@ -534,7 +544,7 @@ export default function Ecommerce() {
                   {isLoadingReport ? 'Analisando dados...' : 'Gerar relatório'}
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => window.location.href = 'google.com'}>
+                <Button size="sm" onClick={() => router.push(`/licitations/${reportGeneratedSuccessfully.id}`)}>
                   Visualizar relatório
                 </Button>
               )}
