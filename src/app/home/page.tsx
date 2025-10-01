@@ -33,7 +33,7 @@ export default function Ecommerce() {
   const { isOpen, closeModal, openModal } = useModal();
   const [results, setResults] = useState<any[]>([1]);
   const [showEditalOptions, setShowEditalOptions] = useState<boolean>(false);
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>('1');
   const [term, setTerm] = useState<string>('Aquisição');
   const [modality, setModality] = useState<string>('1');
   const [realization, setRealization] = useState<string>('1');
@@ -520,7 +520,7 @@ export default function Ecommerce() {
                 <div>
                   <Label>API Key</Label>
                   <Input disabled={isLoadingReport} type="text" placeholder="Insira a sua Api Key para gerar o relatório preliminar" onChange={(value) => setApiKey(value.target.value)} />
-                  <a className="text-gray-400 hover:text-warning-25" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
+                  <a className="text-gray-400 hover:text-blue-700" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
                 </div>
               </div>
             </div>
