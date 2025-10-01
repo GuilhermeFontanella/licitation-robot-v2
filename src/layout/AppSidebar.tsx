@@ -5,8 +5,12 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
+  ChatIcon,
   ChevronDownIcon,
   DocsIcon,
+  EyeIcon,
+  FileIcon,
+  FolderIcon,
   HorizontaLDots,
   ShootingStarIcon,
 } from "../icons/index";
@@ -25,9 +29,14 @@ const navItems: NavItem[] = [
     name: "Processos licitatórios",
     path: '/home'
   },
+  // {
+  //   icon: <ShootingStarIcon />,
+  //   name: "Meus relatórios",
+  //   path: "/licitations",
+  // },
   {
-    icon: <ShootingStarIcon />,
-    name: "Meus relatórios",
+    icon: <FolderIcon />,
+    name: "Análise completa de editais",
     path: "/licitations",
   }
 ];
@@ -253,11 +262,10 @@ const AppSidebar: React.FC = () => {
               alt="Logo"
               width={50}
               height={32}
-            />
-            <p className="text-2xl text-gray-800 dark:text-white/90" style={{margin: 'auto', paddingLeft: '8px'}}>
-              RadarLicit
-            </p>
-
+              />
+              <p className="text-2xl text-gray-800 dark:text-white/90" style={{margin: 'auto', paddingLeft: '8px'}}>
+                RadarLicit
+              </p>
             </div>
           ) : (
             <Image

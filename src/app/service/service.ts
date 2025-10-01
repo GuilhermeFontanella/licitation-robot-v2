@@ -1,4 +1,5 @@
-//import { GoogleGenAI } from "@google/genai";
+import { PROMPT1 } from "@/utils/constants/prompt";
+import { GoogleGenAI } from "@google/genai";
 
 export class Service {
     async getFilterOptions() {
@@ -59,45 +60,67 @@ export class Service {
     }
 
     async getLicitationEdital(codigoLicitacao: number) {
-  try {
-    const response = await fetch(
-      `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/${codigoLicitacao}/documentos/processo`
-    );
+        try {
+            const response = await fetch(
+            `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/${codigoLicitacao}/documentos/processo`
+            );
 
-    const data = await response.json();
+            const data = await response.json();
 
-    const edital = data.find(
-      (doc: any) =>
-        doc.tipo === "Edital" &&
-        doc.nome.toLowerCase().includes("edital") &&
-        doc.url
-    );
+            const edital = data.find(
+            (doc: any) =>
+                doc.tipo === "Edital" &&
+                doc.nome.toLowerCase().includes("edital") &&
+                doc.url
+            );
 
-    return edital ? edital.url : null;
-  } catch (err: any) {
-    throw new Error(err);
-  }
-}
+            return edital ? edital.url : null;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
 
     async getReports(json: string, prompt: string, apiKey: string) {
-        // const ai = new GoogleGenAI({ apiKey: apiKey });
-        // const contents = [{
-        //     role: 'user',
-        //     parts: [
-        //         {
-        //             text: prompt
-        //         },
-        //         {
-        //             text: json
-        //         }
-        //     ]
-        // }
-        // ]
-        // const response = await ai.models.generateContent({
-        //     model: 'gemini-2.5-flash',
-        //     contents: contents
-        // });
-        // return response;
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const contents = [{
+            role: 'user',
+            parts: [
+                {
+                    text: prompt
+                },
+                {
+                    text: json
+                }
+            ]
+        }
+        ]
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: contents
+        });
+        return response;
+    }
+
+    async getFullReport(file: any, prompt: string, apiKey: string) {
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const contents = [{
+            role: 'user',
+            parts: [
+                { text: prompt },
+                {
+                    inlineData: {
+                        data: file,
+                        mimeType: 'application/pdf'
+                    }
+                }
+            ]
+        }];
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: contents
+        });
+        return response;
     }
 
     async storeReports(data: any) {
@@ -113,5 +136,21 @@ export class Service {
         );
         return response.json();
     }
+
+    fileToBase64(file: File): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = () => {
+
+            const base64String = reader.result as string;
+            resolve(base64String);
+            };
+
+            reader.onerror = (error) => reject(error);
+
+            reader.readAsDataURL(file);
+        });
+    };
 }
 

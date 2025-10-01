@@ -231,18 +231,27 @@ export default function Home() {
     console.log(jsonData);
     try {
       const response = await service.getReports(jsonData, PROMPT2, apiKey);
-      const content = '';//response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-      console.log(content);
+      const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-      const payload = {
-        content: JSON.stringify(content)
+      if (!content) {
+        throw new Error("Nenhum conteúdo retornado");
       }
-      const responseStoreReport = await service.storeReports(payload);
-      
-      setReportGeneratedSuccessfully({id: responseStoreReport.id, success: true});
+
+      // Download do arquivo gerado pela ia
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "documento.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
       setIsLoadingReport(false);
       setItemSelectedForPreliminarReport(null);
-      return responseStoreReport;
+      closeModal();
+      return content;
     } catch (err: any) {
       throw new Error(err)
     } finally {
@@ -567,16 +576,9 @@ export default function Home() {
               <Button disabled={isLoadingReport} size="sm" variant="outline" onClick={closeModal}>
                 Cancelar
               </Button>
-              {!reportGeneratedSuccessfully.success 
-              ? (
-                <Button disabled={isLoadingReport || !apiKey} size="sm" onClick={() => generatePreReport()}>
-                  {isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
-                </Button>
-              ) : (
-                <Button size="sm" onClick={() => router.push(`/licitations/${reportGeneratedSuccessfully.id}`)}>
-                  Visualizar análise
-                </Button>
-              )}
+              <Button disabled={isLoadingReport || !apiKey} size="sm" onClick={() => generatePreReport()}>
+                {isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
+              </Button>
             </div>
           </form>
         </div>
