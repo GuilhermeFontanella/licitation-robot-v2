@@ -228,7 +228,7 @@ export default function Home() {
   const generatePreReport = async () => {
     setIsLoadingReport(true);
     const jsonData = JSON.stringify(itemSelectedForPreliminarReport);
-
+    console.log(jsonData);
     try {
       const response = await service.getReports(jsonData, PROMPT2, apiKey);
       const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
@@ -255,7 +255,6 @@ export default function Home() {
     } catch (err: any) {
       throw new Error(err)
     } finally {
-      setIsLoadingReport(false);
     }
   }
 

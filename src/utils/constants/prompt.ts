@@ -34,4 +34,5 @@ export const PROMPT2 = `
     3.2 - resumo; 
     3.8 - Itens do edital com a descrição, quantidade, valor de referência;
     3.9 - Sinalizar os itens que fogem da coesão do edital de compra (por exemplo: um edital que está comprando insumos para laboratórios médicos, comprando luvas de látex, seringas, máscaras, etc, e um dos itens do edital é uma tesoura, ou caneta, etc.). Esses são os itens que eu gostaria de enviar propostas;
+    3.10 - retornar o relatório com a seguinte formataçao: url da licitaçao, resumo, os itens do edital devem vir numa tabela identificando os itens que obedecem as regras.
 `;
