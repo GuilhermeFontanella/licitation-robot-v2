@@ -29,9 +29,10 @@ export const PROMPT2 = `
 
     Suas tarefas serão as seguintes: 
     1 - Analise a lista de editais em formato json e com base no resumo siga as instruções: 
-    2 - gere um relatório com as seguintes informações APENAS SE o item 3.9 for verdadeiro; e retorne apenas o relatório dos editais que satisfazerem a condição. 
+    2 - gere um relatório com as seguintes informações APENAS SE o item 3.8 for verdadeiro; e retorne apenas o relatório dos editais que satisfazerem a condição. 
+    3 - informações:
     3.1 - url da licitação;
-    3.2 - resumo; 
-    3.8 - Itens do edital com a descrição, quantidade, valor de referência;
-    3.9 - Sinalizar os itens que fogem da coesão do edital de compra (por exemplo: um edital que está comprando insumos para laboratórios médicos, comprando luvas de látex, seringas, máscaras, etc, e um dos itens do edital é uma tesoura, ou caneta, etc.). Esses são os itens que eu gostaria de enviar propostas;
+    3.2 - codigoLicitacao
+    3.3 - resumo; 
+    3.8 - Sinalizar os itens que fogem da coesão do edital de compra (por exemplo: um edital que está comprando insumos para laboratórios médicos, comprando luvas de látex, seringas, máscaras, etc, e um dos itens do edital é uma tesoura, ou caneta, etc.). Esses são os itens que eu gostaria de enviar propostas;
 `;

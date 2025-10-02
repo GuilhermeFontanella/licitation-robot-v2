@@ -41,7 +41,6 @@ export default function Home() {
   const [apiKey, setApiKey] = useState<string>('');
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
-  const [reportGeneratedSuccessfully, setReportGeneratedSuccessfully] = useState<{id: string, success: boolean}>({id: '', success: false});
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isSelectProccesses, setIsSelectedProccesses] = useState<boolean>(false);
@@ -81,8 +80,11 @@ export default function Home() {
       ['codigoRealizacao', realization],
       ['codigoJulgamento', judgement],
       ['codigoUf', uf],
-      ['municipio', '0']
     ];
+
+    if (uf) {
+      filters.push(['municipio', '0']);
+    }
 
     filters.forEach(([key, value]) => {
       if (value) url.set(key, value);
@@ -101,7 +103,7 @@ export default function Home() {
     realization,
     judgement,
     uf
-  ])
+  ]);
 
   const showFilter = () => {
     setIsOpenFilter(!isOpenFilter);
@@ -112,12 +114,15 @@ export default function Home() {
   }
 
   const resetFilters = () => {
+    const url = new URLSearchParams(location.search);
+    url.delete('municipio');
     setTerm('');
     setStatus('');
     setModality('');
     setRealization('');
     setJudgement('');
     setUf('');
+    window.history.pushState(null, '', `?${url.toString()}`);
   }
 
   const mapToOptions = (arr: any[] = []) =>
@@ -153,9 +158,11 @@ export default function Home() {
     if (modality) filters.codigoModalidade = modality;
     if (realization) filters.codigoRealizacao = realization;
     if (judgement) filters.codigoJulgamento = judgement;
-    if (uf) filters.codigoUf = uf;
+    if (uf) {
+      filters.codigoUf = uf;
+      filters.municipio = '0';
+    }
     if (page) filters.pagina = page.toString();
-    filters.municipio = '0';
 
     const response = await getLicitations(filters);
     const enriched = await Promise.all(
@@ -176,8 +183,8 @@ export default function Home() {
       const response = await service.getLicitations(params);
       setTotalPages(response.pageCount);
       return response;
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      throw Error(err);
     }
   };
 
@@ -185,8 +192,8 @@ export default function Home() {
     try {
       const response = await service.getLicitationEdital(id);
       return response;
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      throw Error(err);
     }
   }
 
@@ -194,8 +201,8 @@ export default function Home() {
     try {
       const response = await service.getItemsByCodigoLicitacao(id);
       return response;
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      throw Error(err);
     }
   }
 
@@ -228,7 +235,6 @@ export default function Home() {
   const generatePreReport = async () => {
     setIsLoadingReport(true);
     const jsonData = JSON.stringify(itemSelectedForPreliminarReport);
-    console.log(jsonData);
     try {
       const response = await service.getReports(jsonData, PROMPT2, apiKey);
       const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
@@ -250,6 +256,8 @@ export default function Home() {
 
       setIsLoadingReport(false);
       setItemSelectedForPreliminarReport(null);
+      setIsSelectedProccesses(false);
+      setElementsSelected([])
       closeModal();
       return content;
     } catch (err: any) {
@@ -275,10 +283,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    console.log(elementsSelected);
-  }, [elementsSelected])
-
   return (
     <>
     <div>
@@ -297,13 +301,13 @@ export default function Home() {
               <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-12">
                   <Label>Pesquisa por termo</Label>
-                  <Input defaultValue={term} type="text" placeholder="exemplo: Compra" onChange={(value) => handleSelectChange(value.target.value, 'term')} />
+                  <Input value={term} type="text" placeholder="exemplo: Compra" onChange={(value) => handleSelectChange(value.target.value, 'term')} />
                 </div>
                 <div className="col-span-4">
                   <Label>Status</Label>
                   <div className="relative">
                     <Select
-                    defaultValue={status}
+                      defaultValue={status}
                       options={statusOptions}
                       placeholder="Selecione um status"
                       onChange={(value) => handleSelectChange(value, 'status')}
@@ -359,20 +363,6 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-                {/* <div className="col-span-4">
-                  <Label>Periodo</Label>
-                  <div className="relative">
-                    <Select
-                      options={options}
-                      placeholder="Select an option"
-                      onChange={handleSelectChange}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div> */}
                 <div className="col-span-4">
                   <Label>UF</Label>
                   <div className="relative">
@@ -380,7 +370,7 @@ export default function Home() {
                     defaultValue={uf}
                       options={ufOptions}
                       placeholder="Selecione a UF"
-                      onChange={(value) => {console.log(value); handleSelectChange(value, 'uf')}}
+                      onChange={(value) => {handleSelectChange(value, 'uf')}}
                       className="dark:bg-dark-900"
                     />
                     <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
