@@ -1,15 +1,15 @@
-# fly.toml app configuration file generated for licitation-robot on 2025-09-23T13:47:23Z
+# fly.toml app configuration file generated for licitation-robot-v2 on 2025-10-02T02:20:15Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'licitation-robot'
+app = 'licitation-robot-v2'
 primary_region = 'gru'
 
 [build]
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
@@ -20,4 +20,4 @@ primary_region = 'gru'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 256
+  memory_mb = 1024
