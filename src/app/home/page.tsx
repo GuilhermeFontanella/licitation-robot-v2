@@ -171,8 +171,11 @@ export default function Home() {
         items: await getLicitationItemsById(licitation.codigoLicitacao),
         url: await getEditalUrl(licitation.codigoLicitacao)
       }))
-    )
-    setData(enriched);
+    );
+    const dataSorted = enriched.sort((a, b) => {
+      return new Date(b.dataHoraPublicacao).getTime() - new Date(a.dataHoraPublicacao).getTime();
+    });
+    setData(dataSorted);
   } catch (err) {
     console.error(err);
   }
