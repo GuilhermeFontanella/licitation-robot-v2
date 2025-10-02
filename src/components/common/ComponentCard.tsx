@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect } from "react";
 
 interface ComponentCardProps {
@@ -8,7 +9,6 @@ interface ComponentCardProps {
   headerButton?: any;
   checkbox?: any;
   onCheboxSelected?: (isSelected: boolean) => void;
-  checked?: boolean;
 }
 
 const ComponentCard: React.FC<ComponentCardProps> = ({
@@ -18,8 +18,7 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
   desc = "",
   headerButton,
   checkbox = false,
-  onCheboxSelected,
-  checked
+  onCheboxSelected
 }) => {
 
   useEffect(() => {

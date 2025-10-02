@@ -5,14 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
-  ChatIcon,
   ChevronDownIcon,
   DocsIcon,
-  EyeIcon,
-  FileIcon,
   FolderIcon,
-  HorizontaLDots,
-  ShootingStarIcon,
+  HorizontaLDots
 } from "../icons/index";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -29,11 +25,6 @@ const navItems: NavItem[] = [
     name: "Processos licitatórios",
     path: '/home'
   },
-  // {
-  //   icon: <ShootingStarIcon />,
-  //   name: "Meus relatórios",
-  //   path: "/licitations",
-  // },
   {
     icon: <FolderIcon />,
     name: "Análise completa de editais",
