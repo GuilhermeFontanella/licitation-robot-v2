@@ -1,5 +1,7 @@
 import { PROMPT1 } from "@/utils/constants/prompt";
 import { GoogleGenAI } from "@google/genai";
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../../firebaseconfig';
 
 export class Service {
     async getFilterOptions() {
@@ -152,5 +154,15 @@ export class Service {
             reader.readAsDataURL(file);
         });
     };
+
+    async teste(): Promise<any> {
+        try {
+            const querySnapshot = await getDocs(collection(db, "teste"));
+            const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            return items;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
 }
 
