@@ -13,6 +13,7 @@ import {
   Settings
 } from "../icons/index";
 import { useTheme } from "@/context/ThemeContext";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 type NavItem = {
   name: string;
@@ -33,7 +34,7 @@ const navItems: NavItem[] = [
     path: "/licitations",
   },
   {
-    icon: <Settings />,
+    icon: <SettingsIcon />,
     name: "Configurações",
     path: "/settings",
   }
