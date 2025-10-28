@@ -1,6 +1,6 @@
 import { PROMPT1 } from "@/utils/constants/prompt";
 import { GoogleGenAI } from "@google/genai";
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseconfig';
 
 export class Service {
@@ -162,6 +162,26 @@ export class Service {
             return items;
         } catch (err: any) {
             throw new Error(err);
+        }
+    }
+
+    async getApiKey(): Promise<any> {
+        try {
+            const querySnapshot = await getDocs(collection(db, "gemini_api_keys"));
+            const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            return items;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
+
+    async updateApiKey(id: string, newData: any) {
+        try {
+            const docRef = doc(db, "gemini_api_keys", id);
+            const response = await updateDoc(docRef, newData);
+            return response;
+        } catch (err) {
+            console.error("Erro ao atualizar o documento:", err);
         }
     }
 }
