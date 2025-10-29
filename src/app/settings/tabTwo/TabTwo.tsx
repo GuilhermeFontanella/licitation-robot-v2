@@ -1,50 +1,21 @@
 import { Service } from "@/app/service/service";
-import { CheckLineIcon, CloseIcon, CloseLineIcon, PencilIcon } from "@/icons";
+import ComponentCard from "@/components/common/ComponentCard";
+import { CloseLineIcon } from "@/icons";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CardActions from "@mui/material/CardActions";
-import CardContent from "@mui/material/CardContent";
-import CircularProgress from "@mui/material/CircularProgress";
-import Container from "@mui/material/Container";
+import Dialog, { DialogProps } from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 import Slide from "@mui/material/Slide";
-import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
+import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import { TransitionProps } from "@mui/material/transitions";
-import Typography from "@mui/material/Typography";
-import React, { useEffect, useState } from "react";
-const bull = (
-  <Box
-    component="span"
-    sx={{ display: 'inline-block', mx: '2px', transform: 'scale(0.8)' }}
-  >
-    •
-  </Box>
-);
-const card = (
-  <>
-    <CardContent style={{background: 'blue'}}>
-      <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
-        Word of the Day
-      </Typography>
-      <Typography variant="h5" component="div">
-        be{bull}nev{bull}o{bull}lent
-      </Typography>
-      <Typography sx={{ color: 'text.secondary', mb: 1.5 }}>adjective</Typography>
-      <Typography variant="body2">
-        well meaning and kindly.
-        <br />
-        {'"a benevolent smile"'}
-      </Typography>
-    </CardContent>
-    <CardActions>
-      <Button size="small">Learn More</Button>
-    </CardActions>
-  </>
-);
+import React, { useEffect, useRef, useState } from "react";
+import styles from '@/app/settings/tabTwo/styles.module.css';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -63,10 +34,13 @@ interface IApiKey {
 const TabTwo = (props: TabPanelProps) => {
     const service: Service = new Service();
   const { children, value, index, ...other } = props;
-  const [fieldEnabled, setFieldEnabled] = useState<boolean>(false);
-  const [storedApiKey, setStoredApiKey] = useState<IApiKey[]>([]);
-  const [inputValue, setInputValue] = useState<string>('');
+  const [storedPrompts, setStoredPrompts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [scroll, setScroll] = useState<DialogProps['scroll']>('paper');
+  const descriptionElementRef = useRef<HTMLElement>(null);
+  const [promptSelected, setPromptSelected] = useState<any | null>(null);
+  const [inputDialog, setInputDialog] = useState<string>('');
   const [openSnackBar, setOpenSnackBar] = useState<{
     open: boolean;
     Transition: React.ComponentType<
@@ -80,42 +54,38 @@ const TabTwo = (props: TabPanelProps) => {
   });
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
 
-  const getApiKeys = async () => {
+  const getPrompts = async () => {
     setIsLoading(true);
-    setFieldEnabled(false);
     try {
-        const response = await service.getApiKey();
-        setStoredApiKey(response);
-        setInputValue(response[0].value)
+        const response = await service.getPropmts();
+        setStoredPrompts(response);
     } catch (err: any) {
         throw Error(err);
     } finally {
         setIsLoading(false);
+    }
+  }
+
+  const updatePrompts = async () => {
+    setIsLoading(true);
+    try {
+      const id = promptSelected.id;
+      const response = await service.updatePropmts(String(id), {...promptSelected, value: inputDialog});
+      setSnackbarMessage("Prompt salvo com sucesso!")
+      setOpenSnackBar({...openSnackBar, open: true});
+      getPrompts();
+      handleCloseDialog();
+      return response;
+    } catch (err: any) {
+      throw Error(err);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    getApiKeys();
+    getPrompts();
   }, []);
-
-  const updateApiKey = async () => {
-    setIsLoading(true);
-    setFieldEnabled(false);
-    try {
-        const id = storedApiKey[0].id;
-        const response = await service.updateApiKey(String(id), {...storedApiKey[0], value: inputValue});
-        setSnackbarMessage("Api key salva com sucesso!")
-        setOpenSnackBar({...openSnackBar, open: true});
-        getApiKeys();
-        return response;
-    } catch (err: any) {
-        setSnackbarMessage(`Ops, ocorreu um erro: ${err}`)
-        throw Error(err);
-    } finally {
-        setIsLoading(false);
-        setFieldEnabled(false);
-    }
-  }
 
    const handleCloseSnackbar = () => {
     setOpenSnackBar({
@@ -124,46 +94,119 @@ const TabTwo = (props: TabPanelProps) => {
     });
   };
 
+  const handleClickOpenDialog = (prompt: any) => {
+    setOpenDialog(true);
+    setScroll('paper');
+    setPromptSelected(prompt);
+    setInputDialog(prompt.value);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  }
+
+  useEffect(() => {
+    if (openDialog) {
+      const { current: descriptionElement } = descriptionElementRef;
+      if (descriptionElement !== null) {
+        descriptionElement.focus();
+      }
+    }
+  }, [openDialog]);
+
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
+    <>
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`simple-tabpanel-${index}`}
+        aria-labelledby={`simple-tab-${index}`}
+        {...other}
+      >
         {
-            value === index && (
-            <Box sx={{ p: 3 }}>
-              <Grid container spacing={2}>
-                <Grid size={8}>
-                  {card}
+          value === index && (
+          <Box sx={{ p: 3 }}>
+            <Grid container spacing={2}>
+              {storedPrompts.map((e: any) => (
+                <Grid size={6} key={e.id}>
+                  <ComponentCard 
+                    title={e.nickname} 
+                    key={0}
+                    headerButton={
+                    
+                      <div className="flex items-center gap-5">
+                        <Button  size="small" variant="text" onClick={() => handleClickOpenDialog(e)} >
+                            Editar
+                          </Button>
+                      </div>
+                    
+                    }>
+                      <div className={`${styles.prompCard} flex flex-row grid grid-cols-12 justify-between items-center w-full gap-6 xl:flex-row`}>
+                        <div className="col-span-12">
+                          <div>
+                            <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                              Descrição
+                            </p>
+                            <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                              {e.value}
+                            </p>
+                          </div>
+
+                        </div>
+                      </div>
+                    </ComponentCard>
                 </Grid>
-                <Grid size={4}>
-                  {card}
-                </Grid>
-                <Grid size={4}>
-                  {card}
-                </Grid>
-                <Grid size={8}>
-                  {card}
-                </Grid>
+              ))}
               </Grid>
             </Box>
-        )}
-        <Snackbar
-        open={openSnackBar.open}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        message={snackbarMessage}
-        slots={{ transition: openSnackBar.Transition}}
-        action={
-            <IconButton aria-label="edit-button" color="inherit" onClick={updateApiKey}>
-                <CloseLineIcon />
-            </IconButton>
-        }
-      />
-    </div>
+          )}
+          <Snackbar
+          open={openSnackBar.open}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+          message={snackbarMessage}
+          slots={{ transition: openSnackBar.Transition}}
+          action={
+              <IconButton aria-label="edit-button" color="inherit" onClick={() => setOpenSnackBar({...openSnackBar, open: false})}>
+                  <CloseLineIcon />
+              </IconButton>
+          }
+        />
+      </div>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        scroll={scroll}
+        aria-labelledby="scroll-dialog-title"
+        aria-describedby="scroll-dialog-description"
+        maxWidth={'lg'}
+      >
+        <DialogTitle id="scroll-dialog-title">{promptSelected?.nickname}</DialogTitle>
+        <DialogContent dividers={scroll === 'paper'}>
+          <DialogContentText
+            id="scroll-dialog-description"
+            ref={descriptionElementRef}
+            tabIndex={-1}
+            style={{width: '800px'}}
+          >
+            <TextField style={{width: '100%'}}
+              id="filled-textarea"
+              label="Prompt"
+              placeholder="Insira o seu prompt aqui"
+              multiline
+              variant="filled"
+              value={inputDialog}
+              fullWidth={true}
+              onChange={(value) => setInputDialog(value.target.value)}
+            />
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleCloseDialog()}>Cancelar</Button>
+          <Button onClick={() => updatePrompts()}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 

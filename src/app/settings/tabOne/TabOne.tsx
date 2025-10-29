@@ -135,7 +135,7 @@ const TabOne = (props: TabPanelProps) => {
                                     </IconButton>
                                 </Tooltip>
                                 <Tooltip title="Cancelar">
-                                    <IconButton aria-label="edit-button" color="error" onClick={() => setInputValue(storedApiKey[0].value)}>
+                                    <IconButton aria-label="edit-button" color="error" onClick={() => {setInputValue(storedApiKey[0].value); setFieldEnabled(false)}}>
                                         {isLoading ? (
                                                 <CircularProgress size={18} />
                                             ) : (
@@ -155,7 +155,7 @@ const TabOne = (props: TabPanelProps) => {
         message={snackbarMessage}
         slots={{ transition: openSnackBar.Transition}}
         action={
-            <IconButton aria-label="edit-button" color="inherit" onClick={updateApiKey}>
+            <IconButton aria-label="edit-button" color="inherit" onClick={() => setOpenSnackBar({...openSnackBar, open: false})}>
                 <CloseLineIcon />
             </IconButton>
         }

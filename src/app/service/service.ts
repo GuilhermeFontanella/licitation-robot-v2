@@ -184,5 +184,25 @@ export class Service {
             console.error("Erro ao atualizar o documento:", err);
         }
     }
+
+    async getPropmts(): Promise<any> {
+        try {
+            const querySnapshot = await getDocs(collection(db, "prompts"));
+            const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            return items;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
+
+    async updatePropmts(id: string, newData: any): Promise<any> {
+        try {
+            const docRef = doc(db, "prompts", id);
+            const response = await updateDoc(docRef, newData);
+            return response;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
 }
 
