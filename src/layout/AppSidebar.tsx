@@ -5,12 +5,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "../context/SidebarContext";
 import {
+  BoltIcon,
   ChevronDownIcon,
   DocsIcon,
   FolderIcon,
-  HorizontaLDots
+  HorizontaLDots,
+  Settings
 } from "../icons/index";
 import { useTheme } from "@/context/ThemeContext";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 type NavItem = {
   name: string;
@@ -29,6 +32,11 @@ const navItems: NavItem[] = [
     icon: <FolderIcon />,
     name: "Análise completa de editais",
     path: "/licitations",
+  },
+  {
+    icon: <SettingsIcon />,
+    name: "Configurações",
+    path: "/settings",
   }
 ];
 

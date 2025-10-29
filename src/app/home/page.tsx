@@ -131,6 +131,8 @@ export default function Home() {
   const getFilterOptions = async () => {
     try {
       const response = await service.getFilterOptions();
+      const teste = await service.teste();
+      console.log(teste);
 
       const status = mapToOptions(response?.status);
       const modalidades = mapToOptions(response?.modalidades);
