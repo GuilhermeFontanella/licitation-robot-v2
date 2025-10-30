@@ -1,49 +1,76 @@
 "use client"
 
 import ComponentCard from "@/components/common/ComponentCard";
-import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Service } from "../service/service";
-import { PROMPT1 } from "@/utils/constants/prompt";
 import FileInput from "@/components/form/input/FileInput";
+import { TransitionProps } from "react-transition-group/Transition";
+import Alert, { AlertColor } from "@mui/material/Alert";
+import Slide from "@mui/material/Slide";
+import { IApiKey } from "@/utils/models/apikey.interface";
+import Select from "@/components/form/Select";
+import { ChevronDownIcon, CloseLineIcon } from "@/icons";
+import IconButton from "@mui/material/IconButton";
+import Snackbar from "@mui/material/Snackbar";
 
 
 export default function Licitations() {
     const service: Service = new Service();
-    const [apiKey, setApiKey] = useState<string>('');
     const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
     const [fileSelected, setFileSelected] = useState<any>();
+    const [storedPrompts, setStoredPrompts] = useState<any[] | null>(null);
+      const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+      const [storedApiKey, setStoredApiKey] = useState<IApiKey[] | null>(null);
+      const [openSnackBar, setOpenSnackBar] = useState<{
+          open: boolean;
+          Transition: React.ComponentType<
+            TransitionProps & {
+              children: React.ReactElement<any, any>;
+            }
+          >;
+          severity: AlertColor;
+        }>({
+          open: false,
+          Transition: Slide,
+          severity: 'info'
+        });
+        const [snackbarMessage, setSnackbarMessage] = useState<string>('');
 
     const generateFullReport = async () => {
         setIsLoadingReport(true);
-        try {
-            const fileBase64 = await service.fileToBase64(fileSelected);
-            const cleanBase64 = fileBase64.split(",")[1];
-            const response = await service.getFullReport(cleanBase64, PROMPT1, apiKey);
-            const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
-            if (!content) {
-                throw new Error("Nenhum conteúdo retornado");
+        if (storedApiKey) {
+            try {
+                const fileBase64 = await service.fileToBase64(fileSelected);
+                const cleanBase64 = fileBase64.split(",")[1];
+                const response = await service.getFullReport(cleanBase64, selectedPrompt, storedApiKey[0].value);
+                const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    
+                if (!content) {
+                    throw new Error("Nenhum conteúdo retornado");
+                }
+    
+                const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+    
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "documento.txt";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+    
+                URL.revokeObjectURL(url);
+              
+            } catch (err: any) {
+                setSnackbarMessage(`Erro! ${err.message}`)
+                setOpenSnackBar({...openSnackBar, open: true, severity: 'error'});
+                setIsLoadingReport(false);
+                throw new Error(err)
+            } finally {
+                setIsLoadingReport(false);
             }
-
-            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "documento.txt";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            URL.revokeObjectURL(url);
-          
-        } catch (err: any) {
-          throw new Error(err)
-        } finally {
-            setIsLoadingReport(false);
         }
     }
     
@@ -51,6 +78,42 @@ export default function Licitations() {
         window.open('https://aistudio.google.com/apikey', '_blank');
         window.open('https://developers.google.com/workspace/guides/create-project?hl=pt-br', '_blank');
     }
+
+    const getPrompts = async () => {
+        try {
+            const response = await service.getPropmts();
+            const formatedOptions = response.map((e: any) => {
+            return {
+                value: e.value,
+                label: e.nickname
+            }
+            });
+            setStoredPrompts(formatedOptions);
+        } catch (err: any) {
+            throw Error(err);
+        }
+    }
+
+    const getApiKeys = async () => {
+        try {
+            const response = await service.getApiKey();
+            setStoredApiKey(response);
+        } catch (err: any) {
+            throw Error(err);
+        }
+    }
+
+    useEffect(() => {
+        if (!storedPrompts) getPrompts();
+        if (!storedApiKey) getApiKeys();
+    }, []);
+
+    const handleCloseSnackbar = () => {
+        setOpenSnackBar({
+        ...openSnackBar,
+        open: false,
+        });
+    };
 
     return (
         <div>
@@ -74,10 +137,19 @@ export default function Licitations() {
                                         <form className="flex flex-col">
                                             <div className="px-2 overflow-y-auto custom-scrollbar">
                                                 <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-1">
-                                                    <div>
-                                                        <Label>API Key</Label>
-                                                        <Input disabled={isLoadingReport} type="text" placeholder="Insira a sua Api Key para gerar o relatório completo" onChange={(value) => setApiKey(value.target.value)} />
-                                                        <a className="text-gray-400 hover:text-blue-700" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
+                                                    <div className="col-span-4">
+                                                        <Label>Prompt</Label>
+                                                        <div className="relative">
+                                                        <Select
+                                                        options={storedPrompts ? storedPrompts : []}
+                                                        placeholder="Selecione o prompt adequado para esta operação"
+                                                        onChange={setSelectedPrompt}
+                                                        className="dark:bg-dark-900"
+                                                        />
+                                                        <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                                                            <ChevronDownIcon />
+                                                        </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="mt-4">
@@ -86,17 +158,31 @@ export default function Licitations() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
-                                            {
-                                                <Button disabled={isLoadingReport || !apiKey || !fileSelected} size="sm" onClick={() => generateFullReport()}>
-                                                    {isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
+                                                <Button disabled={isLoadingReport || !selectedPrompt || !storedApiKey || !fileSelected} size="sm" onClick={() => generateFullReport()}>
+                                                    {!storedApiKey ? 'Ocorreu um erro ao busar sua Apikey' : isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
                                                 </Button>
-                                            }
                                             </div>
                                         </form>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <Snackbar
+                        open={openSnackBar.open}
+                        autoHideDuration={6000}
+                        slots={{ transition: openSnackBar.Transition}}
+                        action={
+                            <IconButton aria-label="edit-button" color="inherit" onClick={() => setOpenSnackBar({...openSnackBar, open: false})}>
+                            <CloseLineIcon />
+                            </IconButton>
+                        }>
+                            <Alert
+                            onClose={handleCloseSnackbar}
+                            severity={openSnackBar.severity}
+                            variant="filled">
+                            {snackbarMessage}
+                            </Alert>
+                        </Snackbar>
                     </ComponentCard>
                 </div>
             </div>
