@@ -1,12 +1,12 @@
 import { Service } from "@/app/service/service";
-import { CheckLineIcon, CloseIcon, CloseLineIcon, PencilIcon } from "@/icons";
+import { CheckLineIcon, CloseLineIcon, PencilIcon } from "@/icons";
+import { IApiKey } from "@/utils/models/apikey.interface";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 import Slide from "@mui/material/Slide";
-import Snackbar, { SnackbarCloseReason } from "@mui/material/Snackbar";
+import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import { TransitionProps } from "@mui/material/transitions";
@@ -16,14 +16,6 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
-}
-
-interface IApiKey {
-    id: number;
-    value: string;
-    user_id: string;
-    description: string;
-    createdAt: any;
 }
 
 const TabOne = (props: TabPanelProps) => {
@@ -90,6 +82,11 @@ const TabOne = (props: TabPanelProps) => {
     });
   };
 
+  const oepnLink = () => {
+    window.open('https://aistudio.google.com/apikey', '_blank');
+    window.open('https://developers.google.com/workspace/guides/create-project?hl=pt-br', '_blank');
+  }
+
   return (
     <div
       role="tabpanel"
@@ -101,8 +98,8 @@ const TabOne = (props: TabPanelProps) => {
         {
             value === index && (
             <Box sx={{ p: 3 }}>
-                <Container style={{display: 'flex', alignItems: 'baseline'}}>
-                    <TextField 
+                <Container style={{display: 'flex', alignItems: 'baseline', padding: '0px', margin: '0px', maxWidth: '100%'}}>
+                    <TextField
                     fullWidth={true} 
                     disabled={!fieldEnabled} 
                     id="standard-basic" 
@@ -146,6 +143,7 @@ const TabOne = (props: TabPanelProps) => {
                             </Box>
                         )}
                 </Container>
+                <a className="text-gray-400 hover:text-blue-700" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
             </Box>
         )}
         <Snackbar

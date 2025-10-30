@@ -32,7 +32,7 @@ interface IApiKey {
 }
 
 const TabTwo = (props: TabPanelProps) => {
-    const service: Service = new Service();
+  const service: Service = new Service();
   const { children, value, index, ...other } = props;
   const [storedPrompts, setStoredPrompts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);

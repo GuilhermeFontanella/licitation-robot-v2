@@ -14,16 +14,18 @@ import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
 import { Service } from "../service/service";
 import { formatDate } from "@/utils/formatDate";
-import { PROMPT2 } from "@/utils/constants/prompt";
-import { useRouter } from "next/navigation";
+import { IApiKey } from "@/utils/models/apikey.interface";
+import Snackbar from "@mui/material/Snackbar";
+import { TransitionProps } from "@mui/material/transitions";
+import Slide from "@mui/material/Slide";
+import IconButton from "@mui/material/IconButton";
+import Alert, { AlertColor } from "@mui/material/Alert";
 
 
 export default function Home() {
   const service: Service = new Service();
-  const router = useRouter();
   const [isOpenFilter, setIsOpenFilter] = useState<boolean>(false);
   const { isOpen, closeModal, openModal } = useModal();
-  const [results, setResults] = useState<any[]>([1]);
   const [showEditalOptions, setShowEditalOptions] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('1');
   const [term, setTerm] = useState<string>('Aquisição');
@@ -38,13 +40,29 @@ export default function Home() {
   const [judgementOptions, setJudgementOptions] = useState<any[]>([]);
   const [debouncedInputValue, setDebouncedInputValue] = useState("");
   const [data, setData] = useState<any[]>([]);
-  const [apiKey, setApiKey] = useState<string>('');
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isSelectProccesses, setIsSelectedProccesses] = useState<boolean>(false);
   const [elementsSelected, setElementsSelected] = useState<any[]>([]);
+  const [storedPrompts, setStoredPrompts] = useState<any[] | null>(null);
+  const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [storedApiKey, setStoredApiKey] = useState<IApiKey[] | null>(null);
+  const [openSnackBar, setOpenSnackBar] = useState<{
+      open: boolean;
+      Transition: React.ComponentType<
+        TransitionProps & {
+          children: React.ReactElement<any, any>;
+        }
+      >;
+      severity: AlertColor;
+    }>({
+      open: false,
+      Transition: Slide,
+      severity: 'info'
+    });
+    const [snackbarMessage, setSnackbarMessage] = useState<string>('');
 
   const isFilterValueSelected = (): boolean => {
     if (term || status || modality || realization || judgement || uf) {
@@ -132,8 +150,6 @@ export default function Home() {
     try {
       const response = await service.getFilterOptions();
       const teste = await service.teste();
-      console.log(teste);
-
       const status = mapToOptions(response?.status);
       const modalidades = mapToOptions(response?.modalidades);
       const realizacoes = mapToOptions(response?.realizacoes);
@@ -221,6 +237,8 @@ export default function Home() {
   useEffect(() => {
     getFilterOptions();
     fetchLicitations();
+    if (!storedPrompts) getPrompts();
+    if (!storedApiKey) getApiKeys();
   }, []);
 
   useEffect(() => {
@@ -240,40 +258,39 @@ export default function Home() {
   const generatePreReport = async () => {
     setIsLoadingReport(true);
     const jsonData = JSON.stringify(itemSelectedForPreliminarReport);
-    try {
-      const response = await service.getReports(jsonData, PROMPT2, apiKey);
-      const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
-      if (!content) {
-        throw new Error("Nenhum conteúdo retornado");
+    if (storedApiKey) {
+      try {
+        const response = await service.getReports(jsonData, selectedPrompt, storedApiKey[0].value);
+        const content = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  
+        if (!content) {
+          throw new Error("Nenhum conteúdo retornado");
+        }
+  
+        // Download do arquivo gerado pela ia
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "documento.txt";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+  
+        setIsLoadingReport(false);
+        setItemSelectedForPreliminarReport(null);
+        setIsSelectedProccesses(false);
+        setElementsSelected([])
+        closeModal();
+        return content;
+      } catch (err: any) {
+        setSnackbarMessage(`Erro! ${err.message}`)
+        setOpenSnackBar({...openSnackBar, open: true, severity: 'error'});
+        setIsLoadingReport(false);
+        throw new Error(err)
       }
-
-      // Download do arquivo gerado pela ia
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "documento.txt";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      setIsLoadingReport(false);
-      setItemSelectedForPreliminarReport(null);
-      setIsSelectedProccesses(false);
-      setElementsSelected([])
-      closeModal();
-      return content;
-    } catch (err: any) {
-      throw new Error(err)
-    } finally {
     }
-  }
-
-  const oepnLink = () => {
-    window.open('https://aistudio.google.com/apikey', '_blank');
-    window.open('https://developers.google.com/workspace/guides/create-project?hl=pt-br', '_blank');
   }
 
   const handleProcessSelected = (element: any, isSelected: boolean) => {
@@ -286,6 +303,37 @@ export default function Home() {
       // Selecionar: adiciona o elemento
       setElementsSelected(prev => [...prev, element]);
     }
+  };
+
+  const getPrompts = async () => {
+    try {
+        const response = await service.getPropmts();
+        const formatedOptions = response.map((e: any) => {
+          return {
+            value: e.value,
+            label: e.nickname
+          }
+        });
+        setStoredPrompts(formatedOptions);
+    } catch (err: any) {
+        throw Error(err);
+    }
+  }
+
+  const getApiKeys = async () => {
+    try {
+        const response = await service.getApiKey();
+        setStoredApiKey(response);
+    } catch (err: any) {
+        throw Error(err);
+    }
+  }
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackBar({
+      ...openSnackBar,
+      open: false,
+    });
   };
 
   return (
@@ -493,43 +541,6 @@ export default function Home() {
                       <Button size="sm" variant="outline" startIcon={<DownloadIcon />} onClick={() => downloadEdital(element)} >
                         Baixar edital
                       </Button>
-                      {/* <Dropdown
-                        isOpen={showEditalOptions}
-                        onClose={() => {}}
-                        className="absolute right-12 mt-[49px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
-                      >
-                      
-
-                        <ul className="flex flex-col gap-1 pt-4 pb-3 ">
-                          <li>
-                            <DropdownItem
-                              onItemClick={() => downloadEdital(element)}
-                              tag="button"
-                              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-                            >
-                              <div className="flex items-center gap-3">
-                                <DownloadIcon />
-                                <h3>Baixar edital</h3>
-                              </div>
-                              
-                            </DropdownItem>
-                          </li>
-                          <li>
-                            <DropdownItem
-                              onItemClick={showOptions}
-                              tag="a"
-                              href="/profile"
-                              className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-                            >
-                              <div className="flex items-center gap-3">
-                                <FileIcon />
-                                <h3>Gerar relatório completo</h3>
-                              </div>
-                            </DropdownItem>
-                          </li>
-                          
-                        </ul>
-                      </Dropdown> */}
                     </div>
 
                   </div>
@@ -561,9 +572,20 @@ export default function Home() {
             <div className="px-2 overflow-y-auto custom-scrollbar">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 lg:grid-cols-1">
                 <div>
-                  <Label>API Key</Label>
-                  <Input disabled={isLoadingReport} type="text" placeholder="Insira a sua Api Key para gerar o relatório preliminar" onChange={(value) => setApiKey(value.target.value)} />
-                  <a className="text-gray-400 hover:text-blue-700" style={{ cursor: 'pointer', fontSize: '12px'}} onClick={oepnLink}>Não tenho minha Api Key</a>
+                  <div className="col-span-4">
+                    <Label>Prompt</Label>
+                    <div className="relative">
+                      <Select
+                      options={storedPrompts ? storedPrompts : []}
+                      placeholder="Selecione o prompt adequado para esta operação"
+                      onChange={setSelectedPrompt}
+                      className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -571,12 +593,28 @@ export default function Home() {
               <Button disabled={isLoadingReport} size="sm" variant="outline" onClick={closeModal}>
                 Cancelar
               </Button>
-              <Button disabled={isLoadingReport || !apiKey} size="sm" onClick={() => generatePreReport()}>
-                {isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
+              <Button disabled={isLoadingReport || !selectedPrompt || !storedApiKey} size="sm" onClick={() => generatePreReport()}>
+                {!storedApiKey ? 'Ocorreu um erro ao busar sua Apikey' : isLoadingReport ? 'Analisando dados...' : 'Gerar análise'}
               </Button>
             </div>
           </form>
         </div>
+      <Snackbar
+      open={openSnackBar.open}
+      autoHideDuration={6000}
+      slots={{ transition: openSnackBar.Transition}}
+      action={
+        <IconButton aria-label="edit-button" color="inherit" onClick={() => setOpenSnackBar({...openSnackBar, open: false})}>
+          <CloseLineIcon />
+        </IconButton>
+      }>
+        <Alert
+        onClose={handleCloseSnackbar}
+        severity={openSnackBar.severity}
+        variant="filled">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       </Modal>
     </>
   );
