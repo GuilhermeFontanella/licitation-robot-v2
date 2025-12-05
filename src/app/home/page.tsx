@@ -15,12 +15,12 @@ import { Modal } from "@/components/ui/modal";
 import { Service } from "../service/service";
 import { formatDate } from "@/utils/formatDate";
 import { IApiKey } from "@/utils/models/apikey.interface";
-import Snackbar from "@mui/material/Snackbar";
-import { TransitionProps } from "@mui/material/transitions";
 import Slide from "@mui/material/Slide";
-import IconButton from "@mui/material/IconButton";
 import Alert, { AlertColor } from "@mui/material/Alert";
-
+import { TransitionProps } from "@mui/material/transitions";
+import Snackbar from "@mui/material/Snackbar";
+import IconButton from "@mui/material/IconButton";
+import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
 
 export default function Home() {
   const service: Service = new Service();
@@ -44,11 +44,14 @@ export default function Home() {
   const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [isSelectProccesses, setIsSelectedProccesses] = useState<boolean>(false);
   const [elementsSelected, setElementsSelected] = useState<any[]>([]);
   const [storedPrompts, setStoredPrompts] = useState<any[] | null>(null);
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
   const [storedApiKey, setStoredApiKey] = useState<IApiKey[] | null>(null);
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
   const [openSnackBar, setOpenSnackBar] = useState<{
       open: boolean;
       Transition: React.ComponentType<
@@ -112,6 +115,18 @@ export default function Home() {
     window.history.pushState(null, '', `?${url.toString()}`);
   };
 
+  const limpaClasse = () => {
+    setTimeout(() => {
+      const target = Array.from(document.querySelectorAll("div"))
+        .find(el =>
+          el.childNodes.length === 1 &&
+          el.childNodes[0].nodeType === Node.TEXT_NODE &&
+          el.textContent.includes("MUI X Missing license key")
+      );
+      if (target) target.style.display = 'none';
+    }, 100);
+  }
+
   useEffect(() => {
     setUrlFilter();
   }, [
@@ -169,7 +184,7 @@ export default function Home() {
   const fetchLicitations = async () => {
     setData([]);
   try {
-    const filters: Record<string, string> = {};
+    const filters: Record<string, any> = {};
 
     if (status) filters.codigoStatus = status;
     if (term) filters.objeto = term;
@@ -181,10 +196,13 @@ export default function Home() {
       filters.municipio = '0';
     }
     if (page) filters.pagina = page.toString();
+    if (startDate) filters.dataInicial = startDate;
+    if (endDate) filters.dataFinal = endDate;
+    if (startDate && endDate) filters.tipoData = 1;
 
     const response = await getLicitations(filters);
     const enriched = await Promise.all(
-      response.result.map(async (licitation: any) => ({
+      response.result?.map(async (licitation: any) => ({
         ...licitation,
         items: await getLicitationItemsById(licitation.codigoLicitacao),
         url: await getEditalUrl(licitation.codigoLicitacao)
@@ -203,6 +221,7 @@ export default function Home() {
     try {
       const response = await service.getLicitations(params);
       setTotalPages(response.pageCount);
+      setTotalItems(response.total);
       return response;
     } catch (err: any) {
       throw Error(err);
@@ -417,6 +436,21 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="col-span-4">
+                  <Label>Período</Label>
+                  <div className="relative">
+                    <DateRangePicker 
+                    onChange={(value) => {
+                      if (value[0] && value[1]) {
+                        setStartDate(value[0].toDate());
+                        setEndDate(value[1].toDate());
+                      }
+                    }}
+                    slotProps={{textField: {size: 'small', fullWidth: true}}} 
+                    onOpen={() => limpaClasse()} 
+                    localeText={{ start: 'De', end: 'Até' }} />
+                  </div>
+                </div>
+                <div className="col-span-4">
                   <Label>UF</Label>
                   <div className="relative">
                     <Select
@@ -443,6 +477,9 @@ export default function Home() {
               </div>
             )}
           </ComponentCard>
+        </div>
+        <div className="col-span-12 space-y-6">
+          Total resultados: {totalItems}
         </div>
         <div className="xl:col-span-12">
             <div className="flex items-center gap-5">

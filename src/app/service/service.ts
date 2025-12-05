@@ -1,4 +1,4 @@
-import { PROMPT1 } from "@/utils/constants/prompt";
+import axios from 'axios';
 import { GoogleGenAI } from "@google/genai";
 import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseconfig';
@@ -6,8 +6,10 @@ import { db } from '../../../firebaseconfig';
 export class Service {
     async getFilterOptions() {
         try {
-            const response = await fetch('https://conteudo.api.portaldecompraspublicas.com.br/v2/pesquisa/parametros-pesquisa');
-            return response.json();
+            const response = await axios.get(
+                'https://conteudo.api.portaldecompraspublicas.com.br/v2/pesquisa/parametros-pesquisa'
+            );
+            return response.data;
         } catch (err: any) {
             throw new Error(err);
         }
@@ -15,13 +17,11 @@ export class Service {
 
     async getLicitations(params: Record<string, string | number>) {
         try {
-            const query = new URLSearchParams(params as Record<string, string>).toString();
-
-            const response = await fetch(
-            `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/processos?${query}`
+            const response = await axios.get(
+                'https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/processos',
+                { params }
             );
-
-            return response.json();
+            return response.data;
         } catch (err: any) {
             throw new Error(err);
         }
@@ -63,13 +63,12 @@ export class Service {
 
     async getLicitationEdital(codigoLicitacao: number) {
         try {
-            const response = await fetch(
+            const response = await axios.get<any>(
             `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/${codigoLicitacao}/documentos/processo`
             );
 
-            const data = await response.json();
-
-            const edital = data.find(
+            const data = await response.data?.result;
+            const edital = data?.find(
             (doc: any) =>
                 doc.tipo === "Edital" &&
                 doc.nome.toLowerCase().includes("edital") &&
