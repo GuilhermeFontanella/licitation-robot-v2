@@ -27,12 +27,12 @@ export default function Home() {
   const [isOpenFilter, setIsOpenFilter] = useState<boolean>(false);
   const { isOpen, closeModal, openModal } = useModal();
   const [showEditalOptions, setShowEditalOptions] = useState<boolean>(false);
-  const [status, setStatus] = useState<string>('1');
+  const [status, setStatus] = useState<number | null>(1);
   const [term, setTerm] = useState<string>('Aquisição');
-  const [modality, setModality] = useState<string>('1');
-  const [realization, setRealization] = useState<string>('1');
-  const [judgement, setJudgement] = useState<string>('1');
-  const [uf, setUf] = useState<string>('100142');
+  const [modality, setModality] = useState<number | null>(1);
+  const [realization, setRealization] = useState<number | null>(1);
+  const [judgement, setJudgement] = useState<number | null>(1);
+  const [uf, setUf] = useState<number | null>(100142);
   const [statusOptions, setStatusOptions] = useState<any[]>([]);
   const [modalityOptions, setModalityOptions] = useState<any[]>([]);
   const [realizationOptions, setRealizationOptions] = useState<any[]>([]);
@@ -75,9 +75,9 @@ export default function Home() {
     }
   }
 
-  const handleSelectChange = (value: string, field: string) => {
+  const handleSelectChange = (value: any, field: string) => {
     if (field === 'term') {
-      setTerm(value);
+      setTerm(value as string);
     } else if (field === 'status') {
       setStatus(value);
     } else if (field === 'modality') {
@@ -94,7 +94,7 @@ export default function Home() {
   const setUrlFilter = () => {
     const url = new URLSearchParams(location.search);
 
-    const filters: [string, string | undefined][] = [
+    const filters: [string, any | undefined][] = [
       ['objeto', debouncedInputValue],
       ['codigoStatus', status],
       ['codigoModalidade', modality],
@@ -150,11 +150,11 @@ export default function Home() {
     const url = new URLSearchParams(location.search);
     url.delete('municipio');
     setTerm('');
-    setStatus('');
-    setModality('');
-    setRealization('');
-    setJudgement('');
-    setUf('');
+    setStatus(null);
+    setModality(null);
+    setRealization(null);
+    setJudgement(null);
+    setUf(null);
     window.history.pushState(null, '', `?${url.toString()}`);
   }
 
@@ -379,7 +379,7 @@ export default function Home() {
                   <Label>Status</Label>
                   <div className="relative">
                     <Select
-                      defaultValue={status}
+                      defaultValue={'1'}
                       options={statusOptions}
                       placeholder="Selecione um status"
                       onChange={(value) => handleSelectChange(value, 'status')}
@@ -394,7 +394,7 @@ export default function Home() {
                   <Label>Modalidade</Label>
                   <div className="relative">
                     <Select
-                    defaultValue={modality}
+                    defaultValue={'1'}
                       options={modalityOptions}
                       placeholder="Selecione uma modalidade"
                       onChange={(value) => handleSelectChange(value, 'modality')}
@@ -409,7 +409,7 @@ export default function Home() {
                   <Label>Realização</Label>
                   <div className="relative">
                     <Select
-                    defaultValue={realization}
+                    defaultValue={'1'}
                       options={realizationOptions}
                       placeholder="Selecione a realização"
                       onChange={(value) => handleSelectChange(value, 'realization')}
@@ -424,7 +424,7 @@ export default function Home() {
                   <Label>Julgamento</Label>
                   <div className="relative">
                     <Select
-                    defaultValue={judgement}
+                    defaultValue={'1'}
                       options={judgementOptions}
                       placeholder="Selecione o julgamento"
                       onChange={(value) => handleSelectChange(value, 'judgement')}
@@ -454,7 +454,7 @@ export default function Home() {
                   <Label>UF</Label>
                   <div className="relative">
                     <Select
-                    defaultValue={uf}
+                    defaultValue={'100142'}
                       options={ufOptions}
                       placeholder="Selecione a UF"
                       onChange={(value) => {handleSelectChange(value, 'uf')}}
@@ -549,18 +549,10 @@ export default function Home() {
                       <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left" style={{ marginTop: '16px' }}>
                         <div>
                           <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                            Data de Publicação
+                            Data de Início dos Lances
                           </p>
                           <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                            {formatDate(element.dataHoraPublicacao)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                            Abertura das Propostas
-                          </p>
-                          <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                            {formatDate(element.dataHoraInicioPropostas)}
+                            {formatDate(element.dataHoraInicioLances)}
                           </p>
                         </div>
                         <div>
