@@ -67,7 +67,7 @@ export class Service {
             `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/${codigoLicitacao}/documentos/processo`
             );
 
-            const data = await response.data?.result;
+            const data = await response.data;
             const edital = data?.find(
             (doc: any) =>
                 doc.tipo === "Edital" &&
