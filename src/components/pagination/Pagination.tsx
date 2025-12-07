@@ -16,7 +16,7 @@ const PaginationComponent: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex items-center ">
+    <div className={"flex items-center"}>
       <Pagination count={totalPages} page={currentPage} onChange={handleChange}/>
     </div>
   );

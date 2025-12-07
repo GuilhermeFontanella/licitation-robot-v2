@@ -8,7 +8,7 @@ import { ChevronDownIcon, ChevronUpIcon, CloseLineIcon, DownloadIcon, PlugInIcon
 import Input from "@/components/form/input/InputField";
 import BlankPage from "../../components/BlankPage";
 import BasicTableOne from "@/components/tables/BasicTableOne";
-import Pagination from "@/components/tables/Pagination";
+import Pagination from "@/components/pagination/Pagination";
 import Badge from "@/components/ui/badge/Badge";
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "@/components/ui/modal";
@@ -21,6 +21,7 @@ import { TransitionProps } from "@mui/material/transitions";
 import Snackbar from "@mui/material/Snackbar";
 import IconButton from "@mui/material/IconButton";
 import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function Home() {
   const service: Service = new Service();
@@ -39,7 +40,7 @@ export default function Home() {
   const [ufOptions, setUfOptions] = useState<any[]>([]);
   const [judgementOptions, setJudgementOptions] = useState<any[]>([]);
   const [debouncedInputValue, setDebouncedInputValue] = useState("");
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<any[] | null>(null);
   const [isLoadingReport, setIsLoadingReport] = useState<boolean>(false);
   const [itemSelectedForPreliminarReport, setItemSelectedForPreliminarReport] = useState<any | null>(null);
   const [page, setPage] = useState(1);
@@ -53,19 +54,20 @@ export default function Home() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [openSnackBar, setOpenSnackBar] = useState<{
-      open: boolean;
-      Transition: React.ComponentType<
-        TransitionProps & {
-          children: React.ReactElement<any, any>;
-        }
-      >;
-      severity: AlertColor;
-    }>({
-      open: false,
-      Transition: Slide,
-      severity: 'info'
-    });
-    const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+    open: boolean;
+    Transition: React.ComponentType<
+      TransitionProps & {
+        children: React.ReactElement<any, any>;
+      }
+    >;
+    severity: AlertColor;
+  }>({
+    open: false,
+    Transition: Slide,
+    severity: 'info'
+  });
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const isFilterValueSelected = (): boolean => {
     if (term || status || modality || realization || judgement || uf) {
@@ -182,40 +184,43 @@ export default function Home() {
   };
 
   const fetchLicitations = async () => {
+    setIsLoading(true);
     setData([]);
-  try {
-    const filters: Record<string, any> = {};
+    try {
+      const filters: Record<string, any> = {};
 
-    if (status) filters.codigoStatus = status;
-    if (term) filters.objeto = term;
-    if (modality) filters.codigoModalidade = modality;
-    if (realization) filters.codigoRealizacao = realization;
-    if (judgement) filters.codigoJulgamento = judgement;
-    if (uf) {
-      filters.codigoUf = uf;
-      filters.municipio = '0';
+      if (status) filters.codigoStatus = status;
+      if (term) filters.objeto = term;
+      if (modality) filters.codigoModalidade = modality;
+      if (realization) filters.codigoRealizacao = realization;
+      if (judgement) filters.codigoJulgamento = judgement;
+      if (uf) {
+        filters.codigoUf = uf;
+        filters.municipio = '0';
+      }
+      if (page) filters.pagina = page.toString();
+      if (startDate) filters.dataInicial = startDate;
+      if (endDate) filters.dataFinal = endDate;
+      if (startDate && endDate) filters.tipoData = 1;
+
+      const response = await getLicitations(filters);
+      const enriched = await Promise.all(
+        response.result?.map(async (licitation: any) => ({
+          ...licitation,
+          items: await getLicitationItemsById(licitation.codigoLicitacao),
+          url: await getEditalUrl(licitation.codigoLicitacao)
+        }))
+      );
+      const dataSorted = enriched.sort((a, b) => {
+        return new Date(b.dataHoraPublicacao).getTime() - new Date(a.dataHoraPublicacao).getTime();
+      });
+      setData(dataSorted);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-    if (page) filters.pagina = page.toString();
-    if (startDate) filters.dataInicial = startDate;
-    if (endDate) filters.dataFinal = endDate;
-    if (startDate && endDate) filters.tipoData = 1;
-
-    const response = await getLicitations(filters);
-    const enriched = await Promise.all(
-      response.result?.map(async (licitation: any) => ({
-        ...licitation,
-        items: await getLicitationItemsById(licitation.codigoLicitacao),
-        url: await getEditalUrl(licitation.codigoLicitacao)
-      }))
-    );
-    const dataSorted = enriched.sort((a, b) => {
-      return new Date(b.dataHoraPublicacao).getTime() - new Date(a.dataHoraPublicacao).getTime();
-    });
-    setData(dataSorted);
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   const getLicitations = async (params: any) => {
     try {
@@ -357,236 +362,245 @@ export default function Home() {
 
   return (
     <>
-    <div>
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        <div className="col-span-12 space-y-6 xl:col-span-12">
-          <ComponentCard title="Pesquisa de licitações">
-            <div className="flex items-center gap-5">
-              <Button size="md" variant="primary" onClick={fetchLicitations}>
-                Busca rápida
-              </Button>
-              <Button size="md" variant="outline" onClick={showFilter} endIcon={!isOpenFilter ? <ChevronDownIcon /> : <ChevronUpIcon />}>
-                Busca avançada
-              </Button>
-            </div>
-            {isOpenFilter && (
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-12">
-                  <Label>Pesquisa por termo</Label>
-                  <Input value={term} type="text" placeholder="exemplo: Compra" onChange={(value) => handleSelectChange(value.target.value, 'term')} />
-                </div>
-                <div className="col-span-4">
-                  <Label>Status</Label>
-                  <div className="relative">
-                    <Select
+      <div>
+        <div className="grid grid-cols-12 gap-4 md:gap-6">
+          <div className="col-span-12 space-y-6 xl:col-span-12">
+            <ComponentCard title="Pesquisa de licitações">
+              <div className="flex items-center gap-5">
+                <Button size="md" variant="primary" onClick={fetchLicitations}>
+                  Busca rápida
+                </Button>
+                <Button size="md" variant="outline" onClick={showFilter} endIcon={!isOpenFilter ? <ChevronDownIcon /> : <ChevronUpIcon />}>
+                  Busca avançada
+                </Button>
+              </div>
+              {isOpenFilter && (
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12">
+                    <Label>Pesquisa por termo</Label>
+                    <Input value={term} type="text" placeholder="exemplo: Compra" onChange={(value) => handleSelectChange(value.target.value, 'term')} />
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Status</Label>
+                    <div className="relative">
+                      <Select
+                        defaultValue={'1'}
+                        options={statusOptions}
+                        placeholder="Selecione um status"
+                        onChange={(value) => handleSelectChange(value, 'status')}
+                        className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Modalidade</Label>
+                    <div className="relative">
+                      <Select
                       defaultValue={'1'}
-                      options={statusOptions}
-                      placeholder="Selecione um status"
-                      onChange={(value) => handleSelectChange(value, 'status')}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
+                        options={modalityOptions}
+                        placeholder="Selecione uma modalidade"
+                        onChange={(value) => handleSelectChange(value, 'modality')}
+                        className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Realização</Label>
+                    <div className="relative">
+                      <Select
+                      defaultValue={'1'}
+                        options={realizationOptions}
+                        placeholder="Selecione a realização"
+                        onChange={(value) => handleSelectChange(value, 'realization')}
+                        className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Julgamento</Label>
+                    <div className="relative">
+                      <Select
+                      defaultValue={'1'}
+                        options={judgementOptions}
+                        placeholder="Selecione o julgamento"
+                        onChange={(value) => handleSelectChange(value, 'judgement')}
+                        className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <Label>Período</Label>
+                    <div className="relative">
+                      <DateRangePicker 
+                      onChange={(value) => {
+                        if (value[0] && value[1]) {
+                          setStartDate(value[0].toDate());
+                          setEndDate(value[1].toDate());
+                        }
+                      }}
+                      slotProps={{textField: {size: 'small', fullWidth: true}}} 
+                      onOpen={() => limpaClasse()} 
+                      localeText={{ start: 'De', end: 'Até' }} />
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <Label>UF</Label>
+                    <div className="relative">
+                      <Select
+                      defaultValue={'100142'}
+                        options={ufOptions}
+                        placeholder="Selecione a UF"
+                        onChange={(value) => {handleSelectChange(value, 'uf')}}
+                        className="dark:bg-dark-900"
+                      />
+                      <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                      </span>
+                    </div>
+                  </div>
+                  <div className="col-span-12 flex flex-row-reverse gap-5" style={{ marginTop: '16px', justifyItems: 'end' }}>
+                    <Button size="md" variant="primary" onClick={fetchLicitations}>
+                      Buscar
+                    </Button>
+                    <Button disabled={isFilterValueSelected()} size="md" variant="outline" onClick={() => resetFilters()} endIcon={<CloseLineIcon />}>
+                      Limpar campos
+                    </Button>
                   </div>
                 </div>
-                <div className="col-span-4">
-                  <Label>Modalidade</Label>
-                  <div className="relative">
-                    <Select
-                    defaultValue={'1'}
-                      options={modalityOptions}
-                      placeholder="Selecione uma modalidade"
-                      onChange={(value) => handleSelectChange(value, 'modality')}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div>
-                <div className="col-span-4">
-                  <Label>Realização</Label>
-                  <div className="relative">
-                    <Select
-                    defaultValue={'1'}
-                      options={realizationOptions}
-                      placeholder="Selecione a realização"
-                      onChange={(value) => handleSelectChange(value, 'realization')}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div>
-                <div className="col-span-4">
-                  <Label>Julgamento</Label>
-                  <div className="relative">
-                    <Select
-                    defaultValue={'1'}
-                      options={judgementOptions}
-                      placeholder="Selecione o julgamento"
-                      onChange={(value) => handleSelectChange(value, 'judgement')}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div>
-                <div className="col-span-4">
-                  <Label>Período</Label>
-                  <div className="relative">
-                    <DateRangePicker 
-                    onChange={(value) => {
-                      if (value[0] && value[1]) {
-                        setStartDate(value[0].toDate());
-                        setEndDate(value[1].toDate());
-                      }
-                    }}
-                    slotProps={{textField: {size: 'small', fullWidth: true}}} 
-                    onOpen={() => limpaClasse()} 
-                    localeText={{ start: 'De', end: 'Até' }} />
-                  </div>
-                </div>
-                <div className="col-span-4">
-                  <Label>UF</Label>
-                  <div className="relative">
-                    <Select
-                    defaultValue={'100142'}
-                      options={ufOptions}
-                      placeholder="Selecione a UF"
-                      onChange={(value) => {handleSelectChange(value, 'uf')}}
-                      className="dark:bg-dark-900"
-                    />
-                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div>
-
-                <div className="col-span-12 flex flex-row-reverse gap-5" style={{ marginTop: '16px', justifyItems: 'end' }}>
-                  <Button size="md" variant="primary" onClick={fetchLicitations}>
-                    Buscar
-                  </Button>
-                  <Button disabled={isFilterValueSelected()} size="md" variant="outline" onClick={() => resetFilters()} endIcon={<CloseLineIcon />}>
-                    Limpar campos
-                  </Button>
-                </div>
-              </div>
-            )}
-          </ComponentCard>
-        </div>
-        <div className="col-span-12 space-y-6">
-          Total resultados: {totalItems}
-        </div>
-        <div className="xl:col-span-12">
-            <div className="flex items-center gap-5">
-              <Button disabled={elementsSelected?.length > 0} size="sm" variant="primary" onClick={() => {setIsSelectedProccesses(true); setElementsSelected([])}}>
-                {elementsSelected?.length > 0 ? `${elementsSelected.length} selecionados` : 'Selecionar processos'}
-              </Button>
-              {isSelectProccesses && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => {setIsSelectedProccesses(false); setElementsSelected([])}}>
-                    Cancelar
-                  </Button>
-                  <Button disabled={elementsSelected?.length === 0} size="sm" variant="primary" onClick={() => {openModal(); setItemSelectedForPreliminarReport(elementsSelected)}}>
-                    Gerar análises preliminares
-                  </Button>
-                </>
               )}
+            </ComponentCard>
+          </div>
+          {!isLoading && (
+            <div className="col-span-6 space-y-6 text-gray-800 dark:text-white/90">
+              Total resultados: {totalItems}
             </div>
+          )}
+          <div className="xl:col-span-6">
+              <div className="flex justify-end items-center gap-5">
+                {data && data.length > 0 && (
+                  <Button disabled={elementsSelected?.length > 0} size="sm" variant="primary" onClick={() => {setIsSelectedProccesses(true); setElementsSelected([])}}>
+                    {elementsSelected?.length > 0 ? `${elementsSelected.length} selecionados` : 'Selecionar processos'}
+                  </Button>
+                )}
+                {isSelectProccesses && (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => {setIsSelectedProccesses(false); setElementsSelected([])}}>
+                      Cancelar
+                    </Button>
+                    <Button disabled={elementsSelected?.length === 0} size="sm" variant="primary" onClick={() => {openModal(); setItemSelectedForPreliminarReport(elementsSelected)}}>
+                      Gerar análises preliminares
+                    </Button>
+                  </>
+                )}
+              </div>
+          </div>
+        </div>
+        <div style={{ marginTop: '16px' }}>
+          {isLoading ? (
+            <div style={{ height: 'calc(100vh - 550px)', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+              <CircularProgress enableTrackSlot size={30} />
+            </div>
+          ) : (
+            <>
+              {data !== null && data.length > 0
+                ? (
+                  <div className="space-y-6">
+                    {data.map((element: any, index: number) => (
+                      <ComponentCard 
+                      title={`Processo Nº ${element.identificacao} - ${element.codigoLicitacao}`} 
+                      checkbox={isSelectProccesses}
+                      onCheboxSelected={(isSelected) => handleProcessSelected(element, isSelected)}
+                      desc={(
+                        <Badge
+                            size="sm"
+                            color={
+                              element.statusIa === 'com potencial' 
+                                ? 'success' 
+                                : element.statusIa === 'sem potencial' 
+                                  ?  "error" 
+                                  : 'info'
+                            }
+                          >
+                            {element.statusIa ?? 'Não analisado'}
+                          </Badge>
+                    
+                      )}
+                      key={index} 
+                      headerButton={
+                        !elementsSelected.includes(element) && (
+                          <div className="flex items-center gap-5">
+                            <Button size="sm" variant="outline" startIcon={<PlugInIcon />} onClick={() => {openModal(); setItemSelectedForPreliminarReport(element)}}>
+                              Gerar análise preliminar
+                            </Button>
+                          </div>
+                        
+                      )}>
+                        <div className="flex flex-row grid grid-cols-12 justify-between items-center w-full gap-6 xl:flex-row">
+                          <div className="col-span-9">
+                            <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
+                              {`${element.razaoSocial} - ${element.unidadeCompradora.uf}`}
+                            </h4>
+                            <div>
+                              <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                                Descrição
+                              </p>
+                              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                                {element.resumo}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left" style={{ marginTop: '16px' }}>
+                              <div>
+                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                                  Data de Início dos Lances
+                                </p>
+                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                                  {formatDate(element.dataHoraInicioLances)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                                  Tipo
+                                </p>
+                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                                  {`${element.tipoLicitacao.tipoLicitacao} - ${element.tipoLicitacao.tipoJulgamento}`}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-span-3 w-full gap-5 text-end">
+                            <Button size="sm" variant="outline" startIcon={<DownloadIcon />} onClick={() => downloadEdital(element)} >
+                              Baixar edital
+                            </Button>
+                          </div>
+                        </div>
+                        <BasicTableOne items={element.items} key={index} />
+                      </ComponentCard>
+                    ))}
+                    <div className="col-span-12 w-full" style={{justifyItems: 'center', margin: '32px 0 24px 0'}}>
+                      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+                    </div>
+                  </div>
+                )
+                : (
+                  <BlankPage title="Sem resultados para exibir" description="Você pode realizar uma busca rápida ou se preferir uma busca avançada. A busca rápida irá trazer os resultados mais atualizados." />
+                )
+              }
+            </>
+          )}
         </div>
       </div>
-      <div style={{ marginTop: '16px' }}>
-        {data.length > 0
-          ? (
-            <div className="space-y-6">
-              {data.map((element: any, index: number) => (
-                <ComponentCard 
-                title={`Processo Nº ${element.identificacao} - ${element.codigoLicitacao}`} 
-                checkbox={isSelectProccesses}
-                onCheboxSelected={(isSelected) => handleProcessSelected(element, isSelected)}
-                desc={(
-                  <Badge
-                      size="sm"
-                      color={
-                        element.statusIa === 'com potencial' 
-                          ? 'success' 
-                          : element.statusIa === 'sem potencial' 
-                            ?  "error" 
-                            : 'info'
-                      }
-                    >
-                      {element.statusIa ?? 'Não analisado'}
-                    </Badge>
-               
-                )}
-                key={index} 
-                headerButton={
-                  !elementsSelected.includes(element) && (
-                    <div className="flex items-center gap-5">
-                      <Button size="sm" variant="outline" startIcon={<PlugInIcon />} onClick={() => {openModal(); setItemSelectedForPreliminarReport(element)}}>
-                        Gerar análise preliminar
-                      </Button>
-                    </div>
-                  
-                )}>
-                  <div className="flex flex-row grid grid-cols-12 justify-between items-center w-full gap-6 xl:flex-row">
-                    <div className="col-span-9">
-                      <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
-                        {`${element.razaoSocial} - ${element.unidadeCompradora.uf}`}
-                      </h4>
-                      <div>
-                        <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                          Descrição
-                        </p>
-                        <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                          {element.resumo}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left" style={{ marginTop: '16px' }}>
-                        <div>
-                          <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                            Data de Início dos Lances
-                          </p>
-                          <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                            {formatDate(element.dataHoraInicioLances)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                            Tipo
-                          </p>
-                          <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                            {`${element.tipoLicitacao.tipoLicitacao} - ${element.tipoLicitacao.tipoJulgamento}`}
-                          </p>
-                        </div>
-
-                      </div>
-                    </div>
-                    <div className="col-span-3 w-full gap-5 text-end">
-                      <Button size="sm" variant="outline" startIcon={<DownloadIcon />} onClick={() => downloadEdital(element)} >
-                        Baixar edital
-                      </Button>
-                    </div>
-
-                  </div>
-                  <BasicTableOne items={element.items} key={index} />
-                </ComponentCard>
-              ))}
-              <div className="col-span-12 w-full" style={{justifyItems: 'center', margin: '32px 0 24px 0'}}>
-                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-              </div>
-            </div>
-          )
-          : (
-            <BlankPage title="Sem resultados para exibir" description="Você pode realizar uma busca rápida ou se preferir uma busca avançada. A busca rápida irá trazer os resultados mais atualizados." />
-          )
-        }
-      </div>
-    </div>
       <Modal isOpen={isOpen} onClose={closeModal} className="max-w-[700px] m-4">
         <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
           <div className="px-2 pr-14">
