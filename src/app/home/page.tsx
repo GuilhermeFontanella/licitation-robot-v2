@@ -563,7 +563,23 @@ export default function Home() {
                             <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left" style={{ marginTop: '16px' }}>
                               <div>
                                 <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
-                                  Data de Início dos Lances
+                                  Início das propostas
+                                </p>
+                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                                  {formatDate(element.dataHoraInicioPropostas)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                                  Envio das propostas até:
+                                </p>
+                                <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                                  {formatDate(element.dataHoraFinalPropostas)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">
+                                  Início dos Lances
                                 </p>
                                 <p className="text-sm font-medium text-gray-800 dark:text-white/90">
                                   {formatDate(element.dataHoraInicioLances)}

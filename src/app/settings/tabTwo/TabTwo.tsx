@@ -1,6 +1,6 @@
 import { Service } from "@/app/service/service";
 import ComponentCard from "@/components/common/ComponentCard";
-import { CloseLineIcon } from "@/icons";
+import { CloseLineIcon, PencilIcon } from "@/icons";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog, { DialogProps } from "@mui/material/Dialog";
@@ -16,6 +16,13 @@ import TextField from "@mui/material/TextField";
 import { TransitionProps } from "@mui/material/transitions";
 import React, { useEffect, useRef, useState } from "react";
 import styles from '@/app/settings/tabTwo/styles.module.css';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import Tooltip from "@mui/material/Tooltip";
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import { useCreatePrompt } from "@/app/hooks/userCreatePropmt";
+import CircularProgress from "@mui/material/CircularProgress";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -32,6 +39,7 @@ interface IApiKey {
 }
 
 const TabTwo = (props: TabPanelProps) => {
+  const { mutate: createPrompt, isPending, isSuccess, isError } = useCreatePrompt();
   const service: Service = new Service();
   const { children, value, index, ...other } = props;
   const [storedPrompts, setStoredPrompts] = useState<any[]>([]);
@@ -41,6 +49,7 @@ const TabTwo = (props: TabPanelProps) => {
   const descriptionElementRef = useRef<HTMLElement>(null);
   const [promptSelected, setPromptSelected] = useState<any | null>(null);
   const [inputDialog, setInputDialog] = useState<string>('');
+  const [inputRuleTitle, setInputRuleTitle] = useState<string>('');
   const [openSnackBar, setOpenSnackBar] = useState<{
     open: boolean;
     Transition: React.ComponentType<
@@ -58,7 +67,8 @@ const TabTwo = (props: TabPanelProps) => {
     setIsLoading(true);
     try {
         const response = await service.getPropmts();
-        setStoredPrompts(response);
+        console.log(response)
+        setStoredPrompts(response.filter(e => e.status !== 0));
     } catch (err: any) {
         throw Error(err);
     } finally {
@@ -66,11 +76,33 @@ const TabTwo = (props: TabPanelProps) => {
     }
   }
 
+  const createNewPrompt = async () => {
+    createPrompt({
+      status: 1,
+      user_id: "eu",
+      nickname: inputRuleTitle,
+      value: inputDialog,
+      createdAt: new Date()
+    }, {
+      onSuccess: () => {
+        setSnackbarMessage('Prompt salvo com sucesso');
+        setOpenSnackBar({...openSnackBar, open: true});
+        handleCloseDialog();
+      },
+      onError: () => {
+        setSnackbarMessage('Ocorreu um erro ao salvar o prompt');
+        setOpenSnackBar({...openSnackBar, open: true});
+      }
+    });    
+  }
+
   const updatePrompts = async () => {
+    if (!promptSelected) return createNewPrompt();
+
     setIsLoading(true);
     try {
       const id = promptSelected.id;
-      const response = await service.updatePropmts(String(id), {...promptSelected, value: inputDialog});
+      const response = await service.updatePropmts(String(id), {...promptSelected, nickname: inputRuleTitle, value: inputDialog});
       setSnackbarMessage("Prompt salvo com sucesso!")
       setOpenSnackBar({...openSnackBar, open: true});
       getPrompts();
@@ -99,10 +131,28 @@ const TabTwo = (props: TabPanelProps) => {
     setScroll('paper');
     setPromptSelected(prompt);
     setInputDialog(prompt.value);
+    setInputRuleTitle(prompt.nickname)
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+  }
+
+  const handleDeleteRule = async (rule: any) => {
+    setIsLoading(true);
+    try {
+      const id = rule.id;
+      const response = await service.updatePropmts(String(id), {...promptSelected, status: 0});
+      setSnackbarMessage("Prompt excluído com sucesso!")
+      setOpenSnackBar({...openSnackBar, open: true});
+      getPrompts();
+      handleCloseDialog();
+      return response;
+    } catch (err: any) {
+      throw Error(err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -114,6 +164,10 @@ const TabTwo = (props: TabPanelProps) => {
     }
   }, [openDialog]);
 
+  const openDialogNewPropmpt = () => {
+    setOpenDialog(true);
+  }
+
   return (
     <>
       <div
@@ -123,6 +177,13 @@ const TabTwo = (props: TabPanelProps) => {
         aria-labelledby={`simple-tab-${index}`}
         {...other}
       >
+        <div style={{marginBottom: '-16px', marginTop: '16px'}}>
+          <Tooltip title="Criar novo prompt">
+            <IconButton aria-label="delete" onClick={openDialogNewPropmpt}>
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
+        </div>
         {
           value === index && (
           <Box sx={{ p: 3 }}>
@@ -135,9 +196,12 @@ const TabTwo = (props: TabPanelProps) => {
                     headerButton={
                     
                       <div className="flex items-center gap-5">
-                        <Button  size="small" variant="text" onClick={() => handleClickOpenDialog(e)} >
-                            Editar
-                          </Button>
+                          <IconButton aria-label="delete" onClick={() => handleClickOpenDialog(e)}>
+                            <PencilIcon />
+                          </IconButton>
+                          <IconButton aria-label="delete" onClick={() => handleDeleteRule(e)}>
+                            <DeleteIcon />
+                          </IconButton>
                       </div>
                     
                     }>
@@ -181,7 +245,20 @@ const TabTwo = (props: TabPanelProps) => {
         aria-describedby="scroll-dialog-description"
         maxWidth={'lg'}
       >
-        <DialogTitle id="scroll-dialog-title">{promptSelected?.nickname}</DialogTitle>
+        <DialogTitle id="scroll-dialog-title">
+          {!promptSelected ? 'Criar Novo Prompt' : null}
+        </DialogTitle>
+        <DialogTitle id="scroll-dialog-title">
+          <TextField 
+          fullWidth={true} 
+          defaultValue={promptSelected?.nickname} 
+          id="filled-basic" 
+          label="Apelido" 
+          variant="filled" 
+          onChange={(value) => {
+            setInputRuleTitle(value.target.value)
+          }} />
+        </DialogTitle>
         <DialogContent dividers={scroll === 'paper'}>
           <DialogContentText
             id="scroll-dialog-description"
@@ -202,8 +279,12 @@ const TabTwo = (props: TabPanelProps) => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => handleCloseDialog()}>Cancelar</Button>
-          <Button onClick={() => updatePrompts()}>Salvar</Button>
+          <IconButton aria-label="delete" type='button' color='warning' onClick={handleCloseDialog}>
+              <CloseIcon />
+            </IconButton>
+            <IconButton aria-label="delete" onClick={updatePrompts} color='success' disabled={!inputDialog || !inputRuleTitle}>
+              {isLoading ? (<CircularProgress />) : <CheckIcon />}
+            </IconButton>
         </DialogActions>
       </Dialog>
     </>

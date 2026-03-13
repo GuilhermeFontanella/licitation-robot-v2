@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { GoogleGenAI } from "@google/genai";
-import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebaseconfig';
 
 export class Service {
@@ -184,7 +184,7 @@ export class Service {
         }
     }
 
-    async getPropmts(): Promise<any> {
+    async getPropmts(): Promise<any[]> {
         try {
             const querySnapshot = await getDocs(collection(db, "prompts"));
             const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -203,5 +203,16 @@ export class Service {
             throw new Error(err);
         }
     }
+
+    async createPropmt(data: any): Promise<any> {
+        try {
+            const docRef = await addDoc(collection(db, 'prompts'), data);
+            return docRef;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
 }
+
+export const service = new Service();
 

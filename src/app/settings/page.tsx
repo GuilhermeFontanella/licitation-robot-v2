@@ -29,10 +29,10 @@ export default function Licitations() {
             <div className="grid grid-cols-12 gap-4 md:gap-6">
                 <div className="col-span-12 space-y-6 xl:col-span-12">
                     <ComponentCard title="Configurações">
-                        <div className="col-span-12">
-                            <div style={{ marginTop: '16px' }}>
-                                <div className="space-y-6">
-                                    <div className="relative w-full p-4 overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 lg:p-11">
+                        <div className="col-span-12" style={{padding: 0}}>
+                            <div style={{ marginTop: '-16px', padding: 0 }}>
+                                <div >
+                                    <div className="relative w-full overflow-y-auto bg-white no-scrollbar rounded-3xl dark:bg-gray-900 ">
                                         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                                             <Tabs value={currentIndex} onChange={(_, index) => setCurrentIndex(index)} aria-label="basic tabs example">
                                                 <Tab label="Api keys" {...a11yProps(0)} />
