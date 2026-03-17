@@ -1,0 +1,12 @@
+
+.inputDark > label {
+    color: white
+}
+
+.inputDark > div {
+    border-color: white;
+}
+
+.inputDark > div > input {
+    color: white
+}

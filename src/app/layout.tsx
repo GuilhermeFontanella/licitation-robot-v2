@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import DateProvider from '@/utils/providers/date-provider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { SessionProvider } from 'next-auth/react';
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.className} dark:bg-gray-900`}>
+        <SessionProvider>
             <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <DateProvider>
@@ -28,6 +30,8 @@ export default function RootLayout({
           </DateProvider>
         </ThemeProvider>
             </QueryClientProvider>
+
+        </SessionProvider>
       </body>
     </html>
   );
