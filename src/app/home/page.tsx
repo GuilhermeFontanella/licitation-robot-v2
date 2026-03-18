@@ -186,6 +186,8 @@ export default function Home() {
   const fetchLicitations = async () => {
     setIsLoading(true);
     setData([]);
+    setPage(1);
+
     try {
       const filters: Record<string, any> = {};
 
@@ -265,9 +267,10 @@ export default function Home() {
     if (!storedApiKey) getApiKeys();
   }, []);
 
-  useEffect(() => {
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
     fetchLicitations();
-  }, [page]);
+  }
 
   const downloadEdital = (element: any) => {
     const link = document.createElement("a");
@@ -605,7 +608,7 @@ export default function Home() {
                       </ComponentCard>
                     ))}
                     <div className="col-span-12 w-full" style={{justifyItems: 'center', margin: '32px 0 24px 0'}}>
-                      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+                      <Pagination currentPage={page} totalPages={totalPages} onPageChange={(page) => {handlePageChange(page)}} />
                     </div>
                   </div>
                 )

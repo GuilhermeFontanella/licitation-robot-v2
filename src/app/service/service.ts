@@ -83,21 +83,12 @@ export class Service {
 
     async getReports(json: string, prompt: string, apiKey: string) {
         const ai = new GoogleGenAI({ apiKey: apiKey });
-        const contents = [{
-            role: 'user',
-            parts: [
-                {
-                    text: prompt
-                },
-                {
-                    text: json
-                }
-            ]
-        }
-        ]
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: contents
+            model: 'gemini-3.1-pro-preview',
+            contents: [{
+                role: 'user',
+                parts: [{ text: prompt }, { text: json }]
+            }]
         });
         return response;
     }
