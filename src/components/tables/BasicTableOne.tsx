@@ -47,22 +47,22 @@ export default function BasicTableOne({items}: {items: any[]}) {
                       
                       <div>
                         <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                          {item.codigo}
+                          {item?.codigo}
                         </span>
                         
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {item.descricao}
+                    {item?.descricao}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <div className="flex -space-x-2">
-                      {item.quantidade}
+                      {item?.quantidade}
                     </div>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    R$ {item.valorReferencia.toFixed(2)}
+                    R$ {item?.valorReferencia?.toFixed(2)}
                   </TableCell>
                   <TableCell className="px-4 text-center py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                     <Badge
@@ -73,7 +73,7 @@ export default function BasicTableOne({items}: {items: any[]}) {
                           : "error"
                       }
                     >
-                      {item.situacao.descricao}
+                      {item?.situacao?.descricao}
                     </Badge>
                   </TableCell>
                 </TableRow>

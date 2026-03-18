@@ -10,7 +10,8 @@ import {
   DocsIcon,
   FolderIcon,
   HorizontaLDots,
-  Settings
+  Settings,
+  ShootingStarIcon
 } from "../icons/index";
 import { useTheme } from "@/context/ThemeContext";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -25,8 +26,13 @@ type NavItem = {
 const navItems: NavItem[] = [
   {
     icon: <DocsIcon />,
-    name: "Processos licitatórios",
+    name: "Explorar licitações",
     path: '/home'
+  },
+  {
+    icon: <ShootingStarIcon />,
+    name: "Meus processos licitatórios",
+    path: "/my-licitations",
   },
   {
     icon: <FolderIcon />,
