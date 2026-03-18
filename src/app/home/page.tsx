@@ -184,10 +184,9 @@ export default function Home() {
   };
 
   const fetchLicitations = async () => {
+    console.log(page);
     setIsLoading(true);
     setData([]);
-    setPage(1);
-
     try {
       const filters: Record<string, any> = {};
 
@@ -370,7 +369,7 @@ export default function Home() {
           <div className="col-span-12 space-y-6 xl:col-span-12">
             <ComponentCard title="Pesquisa de licitações">
               <div className="flex items-center gap-5">
-                <Button size="md" variant="primary" onClick={fetchLicitations}>
+                <Button size="md" variant="primary" onClick={() => {setPage(1); fetchLicitations();}}>
                   Busca rápida
                 </Button>
                 <Button size="md" variant="outline" onClick={showFilter} endIcon={!isOpenFilter ? <ChevronDownIcon /> : <ChevronUpIcon />}>
@@ -474,7 +473,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="col-span-12 flex flex-row-reverse gap-5" style={{ marginTop: '16px', justifyItems: 'end' }}>
-                    <Button size="md" variant="primary" onClick={fetchLicitations}>
+                    <Button size="md" variant="primary" onClick={() => {setPage(1); fetchLicitations();}}>
                       Buscar
                     </Button>
                     <Button disabled={isFilterValueSelected()} size="md" variant="outline" onClick={() => resetFilters()} endIcon={<CloseLineIcon />}>
