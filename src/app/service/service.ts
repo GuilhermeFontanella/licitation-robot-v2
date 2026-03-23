@@ -27,6 +27,26 @@ export class Service {
         }
     }
 
+    async getLicitationsCompras(params: Record<string, string | number>) {
+        try {
+            const response = await axios.get(
+                'https://pncp.gov.br/api/search/?=',
+                { params }
+            );
+            return response.data;
+        } catch (err: any) {
+            throw new Error(err);
+        }
+    }
+
+    async getItemsByCodigoLicitacaoCompras(orgaoCNPJ: string, ano: string, numeroSequencial: string) {
+        const firstResponse = await fetch(
+            `https://pncp.gov.br/api/pncp/v1/orgaos/${orgaoCNPJ}/compras/${ano}/${numeroSequencial}/itens`
+        );
+        const data = await firstResponse.json();
+        return data;
+    }
+
     async getItemsByCodigoLicitacao(codigoLicitacao: any) {
         const firstResponse = await fetch(
             `https://compras.api.portaldecompraspublicas.com.br/v2/licitacao/${codigoLicitacao}/itens?filtro=&pagina=1`
