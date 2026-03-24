@@ -27,6 +27,7 @@ import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import BasicTableCompras from "@/components/tables/BasicTableCompras";
 import { useRouter } from "next/navigation";
+import AdsClickIcon from '@mui/icons-material/AdsClick';
 
 export default function Home() {
   const route = useRouter();
@@ -244,11 +245,12 @@ export default function Home() {
       console.log(ufOptions.find(e => e.value === filters.codigoUf)?.label)
       const response = await getLicitationsCompras(
         {
+          q: 'comprasnet',
           tipos_documento:'edital',
           status:'recebendo_proposta',
            ordenacao:'-data',
            pagina: page,
-           tam_pagina: 10,
+           tam_pagina: 5,
            ufs: ufOptions.find(e => e.value === filters.codigoUf)?.label
           });
       const enriched = await Promise.all(
@@ -530,7 +532,7 @@ export default function Home() {
                         </div>
                       </div>
                       <div className="col-span-3 w-full gap-5 text-end">
-                        <Button size="sm" variant="outline" startIcon={<DownloadIcon />} >
+                        <Button size="sm" variant="outline" startIcon={<AdsClickIcon />} >
                           <a href={`https://pncp.gov.br/app/editais/${element?.orgao_cnpj}/${element?.ano}/${element?.numero_sequencial}`} target="_blank">
                             Acessar PNCP
                           </a> 

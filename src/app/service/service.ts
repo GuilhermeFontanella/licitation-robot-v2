@@ -40,12 +40,28 @@ export class Service {
     }
 
     async getItemsByCodigoLicitacaoCompras(orgaoCNPJ: string, ano: string, numeroSequencial: string) {
-        const firstResponse = await fetch(
-            `https://pncp.gov.br/api/pncp/v1/orgaos/${orgaoCNPJ}/compras/${ano}/${numeroSequencial}/itens`
+    const tamanhoPagina = 50;
+    let page = 1;
+    let allItems: any[] = [];
+
+    while (true) {
+        const response = await fetch(
+            `https://pncp.gov.br/api/pncp/v1/orgaos/${orgaoCNPJ}/compras/${ano}/${numeroSequencial}/itens?pagina=${page}&tamanhoPagina=${tamanhoPagina}`
         );
-        const data = await firstResponse.json();
-        return data;
+        const data = await response.json();
+
+        if (!Array.isArray(data) || data.length === 0) break;
+
+        allItems = allItems.concat(data);
+
+        if (data.length < tamanhoPagina) break;
+        
+        page++;
     }
+
+    console.log(allItems);
+    return allItems;
+}
 
     async getItemsByCodigoLicitacao(codigoLicitacao: any) {
         const firstResponse = await fetch(
